@@ -1,6 +1,12 @@
 # Git Alias / Function Documentation
 
-To get started, you will need to add the code [found here](https://gist.github.com/jobvite-github/cac8e8619aedea803b1e8cd0a81175fe#file-profile) to your `.profile` file in your User directory ( `~/` )
+To get started, you will need to add the code [found here](https://gist.github.com/jobvite-github/cac8e8619aedea803b1e8cd0a81175fe#file-profile) to your `.profile` file in your User directory ( `~/` ).away
+
+Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, add in the following line to the end of that file:
+
+```
+source ~/.profile
+```
 
 <div>
     <h3 style="display:inline-block"><b>Functions</b></h3>
@@ -57,7 +63,7 @@ For adding a new worktree. This function will create the worktree based on the l
 
 <h3 style="margin-top: 8px;color: #378769">Start Kickoff</h3>
 
-Running this function will run `gulp` in the styles folder of your current branch. If it can't find a "style" or "styles" folder anywhere in the project, this will not run. 
+Running this function will run `gulp` in the styles folder of your current branch. If it can't find a "style" or "styles" folder anywhere in the project, this will not run.
 
 You can specify the location to run gulp by adding it after `start`
 

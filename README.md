@@ -1,6 +1,6 @@
 # Git Alias / Function Documentation
 
-To get started, you will need to add the code [found here](https://gist.github.com/jobvite-github/cac8e8619aedea803b1e8cd0a81175fe#file-profile) to your `.profile` file in your User directory ( `~/` ).away
+To get started, you will need to add the code [found here](./.profile) to your `.profile` file in your User directory ( `~/` ).away
 
 Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, add in the following line to the end of that file:
 

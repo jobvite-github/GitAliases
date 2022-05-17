@@ -8,10 +8,7 @@ Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on whi
 source ~/.profile
 ```
 
-<div>
-    <h3 style="display:inline-block"><b>Functions</b></h3>
-    <p style="display:inline-block"><i>(Click to learn more)</i></p>
-</div>
+<h3 style="display:inline-block"><b>Functions</b></h3>
 
 <details id="addkick">
     <summary><code style="color: #7694A6">addkick()</code></summary>
@@ -89,10 +86,7 @@ or specify
     > stats -10
 </details>
 
-<div>
-    <h3 style="display:inline-block"><b>Aliases</b></h3>
-    <p style="display:inline-block"><i>(Click to learn more)</i></p>
-</div>
+<h3 style="display:inline-block"><b>Aliases</b></h3>
 
 <details id="add">
     <summary><code style="color: #7694A6">add</code></summary>

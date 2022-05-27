@@ -1,6 +1,6 @@
 # Git Alias / Function Documentation
 
-To get started, you will need to add the code [found here](./.profile) to your `.profile` file in your User directory ( `~/` ).away
+To get started, you will need to add the code in the [.profile](./.profile) file to your `.profile` file in your User directory ( `~/` ).
 
 Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, add in the following line to the end of that file:
 

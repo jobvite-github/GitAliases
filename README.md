@@ -93,7 +93,7 @@ or specify
 
 <h3 style="margin-top: 8px;color: #378769">Git Add</h3>
 
-Equivalent to `git add`
+Equivalent to [`git add`](https://git-scm.com/docs/git-add)
 
     > add .
     > add file.html
@@ -113,7 +113,7 @@ This will take you back one commit in time.
 
 <h3 style="margin-top: 8px;color: #378769">Git Branch</h3>
 
-Equivalent to `git branch`
+Equivalent to [`git branch`](https://git-scm.com/docs/git-branch)
 
     > branch myBranch
 </details>
@@ -140,7 +140,7 @@ Using this will add and commit, with a message, all the untracked files in your 
 
 <h3 style="margin-top: 8px;color: #378769">Git Checkout</h3>
 
-Equivalent to `git checkout`
+Equivalent to [`git checkout`](https://git-scm.com/docs/git-checkout)
 
     > ch branch-name
 </details>
@@ -167,7 +167,7 @@ Equivalent to `git checkout starter_branch`
 
 <h3 style="margin-top: 8px;color: #378769">Git Commit</h3>
 
-Equivalent to `git commit`
+Equivalent to [`git commit`](https://git-scm.com/docs/git-commit)
 
     > cm -m "My commit message"
 </details>
@@ -176,7 +176,7 @@ Equivalent to `git commit`
 
 <h3 style="margin-top: 8px;color: #378769">Git Fetch</h3>
 
-Equivalent to `git fetch`
+Equivalent to [`git fetch`](https://git-scm.com/docs/git-fetch)
 
     > fetch
 </details>
@@ -196,7 +196,7 @@ As the name suggests, this is when you've made a terrible oopsie and need to rev
 
 <h3 style="margin-top: 8px;color: #378769">Git Reset</h3>
 
-Equivalent to `git reset`
+Equivalent to [`git reset`](https://git-scm.com/docs/git-reset)
 
     > grs origin/mybranch
 </details>
@@ -205,7 +205,7 @@ Equivalent to `git reset`
 
 <h3 style="margin-top: 8px;color: #378769">Git Remote -v</h3>
 
-Equivalent to `git remote -v`.
+Equivalent to [`git remote -v`](https://git-scm.com/docs/git-remote#Documentation/git-remote.txt--v).
 
 Use this alias to view the remotes you have referrenced on your machine.
 
@@ -216,7 +216,7 @@ Use this alias to view the remotes you have referrenced on your machine.
 
 <h3 style="margin-top: 8px;color: #378769">Git Worktree</h3>
 
-Equivalent to `git worktree`
+Equivalent to [`git worktree`](https://git-scm.com/docs/git-worktree)
 
     > gwt add mybranch
 </details>
@@ -225,7 +225,7 @@ Equivalent to `git worktree`
 
 <h3 style="margin-top: 8px;color: #378769">Git Worktree Add</h3>
 
-Equivalent to `git worktree add`
+Equivalent to [`git worktree add`](https://git-scm.com/docs/git-worktree#Documentation/git-worktree.txt-addltpathgtltcommit-ishgt)
 
     > gwta mybranch
 </details>
@@ -243,7 +243,7 @@ Lists all worktrees
 
 <h3 style="margin-top: 8px;color: #378769">Git Worktree Remove</h3>
 
-Equivalent to `git worktree remove`
+Equivalent to [`git worktree remove`](https://git-scm.com/docs/git-worktree#Documentation/git-worktree.txt-remove)
 
     > gwtr /path/to/branchName
 </details>
@@ -276,7 +276,7 @@ Equivalent to `git push origin/branchName`
 
 <h3 style="margin-top: 8px;color: #378769">Stash Pop</h3>
 
-Equivalent to `stash pop`. This puts your stashed files back.
+Equivalent to [`stash pop`](https://git-scm.com/docs/git-stash#Documentation/git-stash.txt-pop--index-q--quietltstashgt). This puts your stashed files back.
 
 usage
 </details>
@@ -285,7 +285,7 @@ usage
 
 <h3 style="margin-top: 8px;color: #378769">Git Pull</h3>
 
-Equivalent to `git pull`
+Equivalent to [`git pull`](https://git-scm.com/docs/git-pull)
 
     > pull
 </details>
@@ -294,7 +294,7 @@ Equivalent to `git pull`
 
 <h3 style="margin-top: 8px;color: #378769">Git Push</h3>
 
-Equivalent to `git push`
+Equivalent to [`git push`](https://git-scm.com/docs/git-push)
 
     > push
 </details>
@@ -303,7 +303,7 @@ Equivalent to `git push`
 
 <h3 style="margin-top: 8px;color: #378769">Git Rebase</h3>
 
-Equivalent to `git rebase`
+Equivalent to [`git rebase`](https://git-scm.com/docs/git-rebase)
 
     > rb origin/branchName
 </details>
@@ -312,7 +312,7 @@ Equivalent to `git rebase`
 
 <h3 style="margin-top: 8px;color: #378769">Git Status</h3>
 
-Shorthand equivalent to `git status`
+Shorthand equivalent to [`git status`](https://git-scm.com/docs/git-status)
 
     > s
 </details>
@@ -330,7 +330,7 @@ Like the name suggests, you would use this when you make a mistake and need to r
 
 <h3 style="margin-top: 8px;color: #378769">Git Stash</h3>
 
-Equivalent to `git stash`
+Equivalent to [`git stash`](https://git-scm.com/docs/git-stash)
 
     > stash .
     > stash myFile.js

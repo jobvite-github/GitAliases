@@ -354,3 +354,30 @@ Equivalent to `git pull origin/branchName`
 
     > tug
 </details>
+
+<br>
+
+<h3 style="display:inline-block"><b>Configuration</b></h3>
+
+<details id="config">
+    <summary><code style="color: #7694A6">config</code></summary>
+
+<h3 style="margin-top: 8px;color: #378769">Open .profile</h3>
+
+Using this function will open your `.profile` in VS Code, allowing you to make updates to your aliases and functions.
+
+```
+> config
+```
+</details>
+
+<details id="reload">
+    <summary><code style="color: #7694A6">reload</code></summary>
+
+<h3 style="margin-top: 8px;color: #378769">Reload .profile</h3>
+
+Using this function will allow you to reload and use any changes made to your `.profile` without needed to close your terminal.
+```
+> reload
+```
+</details>

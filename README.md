@@ -13,7 +13,9 @@ source ~/.profile
 <details id="addkick">
     <summary><code style="color: #7694A6">addkick()</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Add Kickoff</p>
+<br>
+
+**Add Kickoff**
 
 Using this function will allow you to get the latest Kickoff code into any project.
 You can specify where you would like to put it by adding in the path after `addkick`, or you can go to that location in your terminal and run `addkick`
@@ -29,7 +31,9 @@ or specify the location
 <details id="camp">
     <summary><code style="color: #7694A6">camp()</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Commit. Add. Message. Push.</p>
+<br>
+
+**Commit. Add. Message. Push.**
 
 This function combines the steps of adding, committing and pushing.
 
@@ -40,7 +44,9 @@ This function combines the steps of adding, committing and pushing.
 <details id="cmp">
     <summary><code style="color: #7694A6">cmp()</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Commit. Message. Push.</p>
+<br>
+
+**Commit. Message. Push.**
 
 Use this function to commit and push already staged files. If no files are staged, `git add` the files you want to commit. If you want to commit all files, use the [camp](#camp) function
 
@@ -49,7 +55,9 @@ Use this function to commit and push already staged files. If no files are stage
 <details id="gwtn">
     <summary><code style="color: #7694A6">gwtn()</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Worktree New</p>
+<br>
+
+**Git Worktree New**
 
 For adding a new worktree. This function will create the worktree based on the latest, if any, existing GitHub code, installs npm, and does an initial push of the branch if it isn't already set up. Once you run this command, you will be ready to work on this worktree. This will work both existing and non-existing branches.
 
@@ -58,7 +66,9 @@ For adding a new worktree. This function will create the worktree based on the l
 <details id="start">
     <summary><code style="color: #7694A6">start()</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Start Kickoff</p>
+<br>
+
+**Start Kickoff**
 
 Running this function will run `gulp` in the styles folder of your current branch. If it can't find a "style" or "styles" folder anywhere in the project, this will not run.
 
@@ -73,7 +83,9 @@ or specify
 <details id="stats">
     <summary><code style="color: #7694A6">stats()</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Statistics</p>
+<br>
+
+**Statistics**
 
 Using this shows you, by default, the last 50 commits made to the repo.
 
@@ -91,7 +103,9 @@ or specify
 <details id="add">
     <summary><code style="color: #7694A6">add</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Add</p>
+<br>
+
+**Git Add**
 
 Equivalent to [`git add`](https://git-scm.com/docs/git-add)
 
@@ -102,7 +116,9 @@ Equivalent to [`git add`](https://git-scm.com/docs/git-add)
 <details id="back">
     <summary><code style="color: #7694A6">back</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Go Back</p>
+<br>
+
+**Go Back**
 
 This will take you back one commit in time.
 
@@ -111,7 +127,9 @@ This will take you back one commit in time.
 <details id="branch">
     <summary><code style="color: #7694A6">branch</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Branch</p>
+<br>
+
+**Git Branch**
 
 Equivalent to [`git branch`](https://git-scm.com/docs/git-branch)
 
@@ -120,7 +138,9 @@ Equivalent to [`git branch`](https://git-scm.com/docs/git-branch)
 <details id="branches">
     <summary><code style="color: #7694A6">branches</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">List Branches</p>
+<br>
+
+**List Branches**
 
 This will return a list of all branches in the current repo.
 
@@ -129,7 +149,9 @@ This will return a list of all branches in the current repo.
 <details id="cam">
     <summary><code style="color: #7694A6">cam</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Commit. Add. Message.</p>
+<br>
+
+**Commit. Add. Message.**
 
 Using this will add and commit, with a message, all the untracked files in your branch. If you don't want to commit all files, use the normal `add`, `commit -m` method.
 
@@ -138,7 +160,9 @@ Using this will add and commit, with a message, all the untracked files in your 
 <details idch">
     <summary><code style="color: #7694A6">ch</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Checkout</p>
+<br>
+
+**Git Checkout**
 
 Equivalent to [`git checkout`](https://git-scm.com/docs/git-checkout)
 
@@ -147,7 +171,9 @@ Equivalent to [`git checkout`](https://git-scm.com/docs/git-checkout)
 <details id="chr">
     <summary><code style="color: #7694A6">chr</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Checkout Root</p>
+<br>
+
+**Git Checkout Root**
 
 Equivalent to `git checkout root`
 
@@ -156,7 +182,9 @@ Equivalent to `git checkout root`
 <details id="chsb">
     <summary><code style="color: #7694A6">chsb</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Checkout starter_branch</p>
+<br>
+
+**Git Checkout starter_branch**
 
 Equivalent to `git checkout starter_branch`
 
@@ -165,7 +193,9 @@ Equivalent to `git checkout starter_branch`
 <details idcm">
     <summary><code style="color: #7694A6">cm</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Commit</p>
+<br>
+
+**Git Commit**
 
 Equivalent to [`git commit`](https://git-scm.com/docs/git-commit)
 
@@ -174,7 +204,9 @@ Equivalent to [`git commit`](https://git-scm.com/docs/git-commit)
 <details id="fetch">
     <summary><code style="color: #7694A6">fetch</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Fetch</p>
+<br>
+
+**Git Fetch**
 
 Equivalent to [`git fetch`](https://git-scm.com/docs/git-fetch)
 
@@ -183,7 +215,9 @@ Equivalent to [`git fetch`](https://git-scm.com/docs/git-fetch)
 <details id="fuck">
     <summary><code style="color: #7694A6">fuck</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Fuck</p>
+<br>
+
+**Fuck**
 
 As the name suggests, this is when you've made a terrible oopsie and need to revert back to the `origin/master` branch.
 
@@ -194,7 +228,9 @@ As the name suggests, this is when you've made a terrible oopsie and need to rev
 <details id="grs">
     <summary><code style="color: #7694A6">grs</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Reset</p>
+<br>
+
+**Git Reset**
 
 Equivalent to [`git reset`](https://git-scm.com/docs/git-reset)
 
@@ -203,7 +239,9 @@ Equivalent to [`git reset`](https://git-scm.com/docs/git-reset)
 <details id="grv">
     <summary><code style="color: #7694A6">grv</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Remote -v</p>
+<br>
+
+**Git Remote -v**
 
 Equivalent to [`git remote -v`](https://git-scm.com/docs/git-remote#Documentation/git-remote.txt--v).
 
@@ -214,7 +252,9 @@ Use this alias to view the remotes you have referrenced on your machine.
 <details id="gwt">
     <summary><code style="color: #7694A6">gwt</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Worktree</p>
+<br>
+
+**Git Worktree**
 
 Equivalent to [`git worktree`](https://git-scm.com/docs/git-worktree)
 
@@ -223,7 +263,9 @@ Equivalent to [`git worktree`](https://git-scm.com/docs/git-worktree)
 <details id="gwta">
     <summary><code style="color: #7694A6">gwta</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Worktree Add</p>
+<br>
+
+**Git Worktree Add**
 
 Equivalent to [`git worktree add`](https://git-scm.com/docs/git-worktree#Documentation/git-worktree.txt-addltpathgtltcommit-ishgt)
 
@@ -232,7 +274,9 @@ Equivalent to [`git worktree add`](https://git-scm.com/docs/git-worktree#Documen
 <details id="gwtl">
     <summary><code style="color: #7694A6">gwtl</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Worktree List</p>
+<br>
+
+**Git Worktree List**
 
 Lists all worktrees
 
@@ -241,7 +285,9 @@ Lists all worktrees
 <details id="gwtr">
     <summary><code style="color: #7694A6">gwtr</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Worktree Remove</p>
+<br>
+
+**Git Worktree Remove**
 
 Equivalent to [`git worktree remove`](https://git-scm.com/docs/git-worktree#Documentation/git-worktree.txt-remove)
 
@@ -250,7 +296,9 @@ Equivalent to [`git worktree remove`](https://git-scm.com/docs/git-worktree#Docu
 <details id="peek">
     <summary><code style="color: #7694A6">peek</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Peek</p>
+<br>
+
+**Peek**
 
 Using this alias allows you to view, by default, the last 20 commits on your current branch.
 
@@ -265,7 +313,9 @@ or specify
 <details id="poke">
     <summary><code style="color: #7694A6">poke</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Poke</p>
+<br>
+
+**Poke**
 
 Equivalent to `git push origin/branchName`
 
@@ -274,7 +324,9 @@ Equivalent to `git push origin/branchName`
 <details id="pop">
     <summary><code style="color: #7694A6">pop</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Stash Pop</p>
+<br>
+
+**Stash Pop**
 
 Equivalent to [`stash pop`](https://git-scm.com/docs/git-stash#Documentation/git-stash.txt-pop--index-q--quietltstashgt). This puts your stashed files back.
 
@@ -283,7 +335,9 @@ usage
 <details id="pull">
     <summary><code style="color: #7694A6">pull</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Pull</p>
+<br>
+
+**Git Pull**
 
 Equivalent to [`git pull`](https://git-scm.com/docs/git-pull)
 
@@ -292,7 +346,9 @@ Equivalent to [`git pull`](https://git-scm.com/docs/git-pull)
 <details id="push">
     <summary><code style="color: #7694A6">push</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Push</p>
+<br>
+
+**Git Push**
 
 Equivalent to [`git push`](https://git-scm.com/docs/git-push)
 
@@ -301,7 +357,9 @@ Equivalent to [`git push`](https://git-scm.com/docs/git-push)
 <details id="rb">
     <summary><code style="color: #7694A6">rb</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Rebase</p>
+<br>
+
+**Git Rebase**
 
 Equivalent to [`git rebase`](https://git-scm.com/docs/git-rebase)
 
@@ -310,7 +368,9 @@ Equivalent to [`git rebase`](https://git-scm.com/docs/git-rebase)
 <details id="s">
     <summary><code style="color: #7694A6">s</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Status</p>
+<br>
+
+**Git Status**
 
 Shorthand equivalent to [`git status`](https://git-scm.com/docs/git-status)
 
@@ -319,7 +379,9 @@ Shorthand equivalent to [`git status`](https://git-scm.com/docs/git-status)
 <details id="shit">
     <summary><code style="color: #7694A6">shit</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Shit</p>
+<br>
+
+**Shit**
 
 Like the name suggests, you would use this when you make a mistake and need to revert to the latest commit.
 
@@ -328,7 +390,9 @@ Like the name suggests, you would use this when you make a mistake and need to r
 <details id="stash">
     <summary><code style="color: #7694A6">stash</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Git Stash</p>
+<br>
+
+**Git Stash**
 
 Equivalent to [`git stash`](https://git-scm.com/docs/git-stash)
 
@@ -339,7 +403,9 @@ Equivalent to [`git stash`](https://git-scm.com/docs/git-stash)
 <details id="stashed">
     <summary><code style="color: #7694A6">stashed</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Show Stashed</p>
+<br>
+
+**Show Stashed**
 
 This shows the current stashed files.
 
@@ -348,7 +414,9 @@ This shows the current stashed files.
 <details id="tug">
     <summary><code style="color: #7694A6">tug</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Tug</p>
+<br>
+
+**Tug**
 
 Equivalent to `git pull origin/branchName`
 
@@ -362,7 +430,9 @@ Equivalent to `git pull origin/branchName`
 <details id="config">
     <summary><code style="color: #7694A6">config</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Open .profile</p>
+<br>
+
+**Open .profile**
 
 Using this function will open your `.profile` in VS Code, allowing you to make updates to your aliases and functions.
 
@@ -374,7 +444,9 @@ Using this function will open your `.profile` in VS Code, allowing you to make u
 <details id="reload">
     <summary><code style="color: #7694A6">reload</code></summary>
 
-<p style="font-size:20px;font-weight:700;margin-top: 8px;color: #378769">Reload .profile</p>
+<br>
+
+**Reload .profile**
 
 Using this function will allow you to reload and use any changes made to your `.profile` without needed to close your terminal.
 ```

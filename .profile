@@ -37,14 +37,6 @@ function cmp() {
     fi
     git push $2
 }
-function gwte() {
-    if [[ $1 != "" ]]
-    then
-        ~/Jobvite/CWS && git checkout root && git worktree add --track -B ${1} ./${1} origin/${1} && ${1}/ && mkdir _dev
-    else
-        echo 'Gotta name that shit, bud.'
-    fi
-}
 function gwtm() {
     if [[ $1 != "" ]]
     then
@@ -64,25 +56,6 @@ function gwtn() {
     else
         echo 'Gotta name that shit, bud.'
     fi
-}
-function gwto() { #	Git Worktree Old ( for older sites that are getting edits )
-    if [[ $1 != "" ]]
-    then
-        ~/Jobvite/CWS && git checkout base_starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" && git push --set-upstream origin $(git symbolic-ref --short HEAD) && code .
-    else
-        echo 'Gotta name that shit, bud.'
-    fi
-}
-function gwts() {
-    if [[ $1 != "" ]]
-    then
-        ~/Jobvite/CWS && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && npm i && .. && git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" && git push --set-upstream origin $(git symbolic-ref --short HEAD) && code . && /styles && gulp
-    else
-        echo 'Gotta name that shit, bud.'
-    fi
-}
-function mpeek() {
-    git log master.. --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}
 }
 function start() {
     if [[ $1 != "" ]]
@@ -120,10 +93,7 @@ alias branches='git branch --list'
 alias bset='git branch --set-upstream-to=origin/$(git symbolic-ref --short HEAD) $(git symbolic-ref --short HEAD)'
 alias cam='git add . && git commit -m'
 alias ch='git checkout'
-alias chd='git checkout develop'
-alias chma='git checkout master'
 alias chr='git checkout root'
-alias chs='git checkout sandbox'
 alias chsb='git checkout starter_branch'
 alias clone='git clone'
 alias cm='git commit -m'
@@ -139,25 +109,19 @@ alias gwt='git worktree'
 alias gwta='git worktree add'
 alias gwtl='git worktree list'
 alias gwtr='git worktree remove'
-alias gwts='git worktree add $1 $1'
-alias home='git reset origin/master'
 alias lga='git log --graph --all --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)"'
 alias mg='git merge'
 alias newb='git checkout -b'
-alias pages='git stash && git checkout gh-pages'
 alias peek='git log --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
 alias peekall='git log --graph origin --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
 alias poke='git push origin $(git symbolic-ref --short HEAD)'
 alias pop='git stash pop'
 alias pset='git push --set-upstream origin $(git symbolic-ref --short HEAD)'
 alias ptag='git push origin --tags'
-alias pud='git pull origin develop'
 alias pull='git pull'
 alias push='git push'
 alias pushall='git push && git push origin --tags'
 alias rb='git rebase'
-alias rbd='git rebase develop'
-alias rbm='git rebase master'
 alias ref='git reflog'
 alias s='git status'
 alias setit='git reset --hard origin/$(git symbolic-ref --short HEAD)'

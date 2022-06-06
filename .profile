@@ -47,9 +47,9 @@ function gwtm() {
 }
 function gwtn() {
     if [[ $1 != "" ]] then
-		git show-branch ${1}
+		git show-branch refs/remotes/origin/${1}
 		if [[ $? == 0 ]] then
-        	~/Jobvite/CWS && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && npm i && .. && git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" && git push --set-upstream origin $(git symbolic-ref --short HEAD) && code .
+        	~/Jobvite/CWS && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && npm i && .. && code .
 		else
         	~/Jobvite/CWS && git checkout starter_branch && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && npm i && .. && git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" && git push --set-upstream origin $(git symbolic-ref --short HEAD) && code .
 		fi

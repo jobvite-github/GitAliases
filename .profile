@@ -57,6 +57,12 @@ function gwtn() {
         echo 'Gotta name that shit, bud.'
     fi
 }
+function new() {
+	if [ -d desktop/ ] || mkdir desktop && touch .gitkeep
+	if [ -d mobile/ ] || mkdir mobile && touch .gitkeep
+	if [ -d images/ ] || mkdir images && touch .gitkeep
+	if [ -d styles/ ] || addkick
+}
 function start() {
     if [[ $1 != "" ]]
     then

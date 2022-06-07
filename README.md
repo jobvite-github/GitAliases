@@ -63,6 +63,17 @@ For adding a new worktree. This function will create the worktree based on the l
 
     > gwtn projectname
 </details>
+<details id="new">
+    <summary><code style="color: #7694A6">new()</code></summary>
+
+<br>
+
+**New Project Structure**
+
+Running this function creates an unobtrusive new `starter_branch` folder structure. It will add the `desktop/`, `mobile/`, `images/`, and `styles/` folders, as well as call [addkick](#addkick), so it will add the latest Kickoff code. If any folders of the same name already exist, they will be untouched and no new folder will be created, leaving all previous work safe, but giving us the opportunity to easily work with the latest code and structure.
+
+    > new
+</details>
 <details id="start">
     <summary><code style="color: #7694A6">start()</code></summary>
 

@@ -58,9 +58,9 @@ function gwtn() {
     fi
 }
 function new() {
-	if [ -d desktop/ ] || mkdir desktop && touch .gitkeep
-	if [ -d mobile/ ] || mkdir mobile && touch .gitkeep
-	if [ -d images/ ] || mkdir images && touch .gitkeep
+	if [ -d desktop/ ] || mkdir desktop && touch desktop/.gitkeep
+	if [ -d mobile/ ] || mkdir mobile && touch mobile/.gitkeep
+	if [ -d images/ ] || mkdir images && touch images/.gitkeep
 	if [ -d styles/ ] || addkick
 }
 function start() {

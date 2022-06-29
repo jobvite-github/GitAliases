@@ -4,9 +4,24 @@ To get started, you will need to add the code in the [.profile](./.profile) file
 
 Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, add in the following line to the end of that file:
 
-```
+```sh
 source ~/.profile
 ```
+
+## Update (June 29 2022)
+
+In your terminal, run:
+
+```sh
+config
+```
+
+to open up your `.profile`, and replace what you have with the code in this repo.
+
+
+After you put the latest code in your `.profile`, make sure you update the `CWSPATH` variable to reflect the path to your CWS folder. My folder is in my ~ (User Directory) -> Jobvite -> CWS.
+
+If your CWS folder is in your User Directory, for example, you would change `CWSPATH` from `~/Jobvite/CWS` to `~/CWS`. Prior to the latest updates, you had to replace the `~/Jobvite/CWS/` in multiple places.
 
 <h3 style="display:inline-block"><b>Functions</b></h3>
 
@@ -18,14 +33,19 @@ source ~/.profile
 **Add Kickoff**
 
 Using this function will allow you to get the latest Kickoff code into any project.
-You can specify where you would like to put it by adding in the path after `addkick`, or you can go to that location in your terminal and run `addkick`
-```
-> addkick
-```
+You can specify where you would like to put it by adding in the path after `addkick`, or you can go to that location in your terminal and run `addkick`.
 
-or specify the location
-```
-> addkick ./myfolder
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| branch_name | Name of directory to store kickoff. If empty, uses current directory. | [x] |
+
+Examples:
+
+```sh
+git:(<branch_name>) $ addkick
+
+git:(<branch_name>) $ addkick ./myfolder
 ```
 </details>
 <details id="camp">
@@ -35,11 +55,29 @@ or specify the location
 
 **Commit. Add. Message. Push.**
 
-This function combines the steps of adding, committing and pushing.
+This function combines the steps of adding, committing and pushing. It also allows for tagging, if you feel so inclined. You can specify which branch you want to push, or `cd` into that branch and use the function without specifying.
 
-<sub><b style="color: #DE897C">Caution: This will add all unstaged files. If you want to add only specific files, do a manual `git add` of the files you want, and then use the [cmp](#cmp) function</b></sub>
+<sub><b style="color: #DE897C">Caution: This will add all unstaged files. If you want to add only specific files, do a manual `git add` of the files you want, and then use the [cmp](#cmp) function or [cam](#cam) alias</b></sub>
 
-    > camp "My commit message"
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| -t | Flag for adding a tag | [x] |
+| tag | Value for tag (i.e., v1.0) | [x] |
+| tag_msg | Message for tag | [x] |
+| commit_msg | Message for commit. Technically optional, but not recommended to exclude | [] |
+| branch_name | Name of project. If empty, uses current directory. | [x] |
+
+Examples:
+
+```sh
+git:(<branch_name>) $ camp <commit_msg>
+git:(<branch_name>) $ camp <commit_msg> <branch_name>
+git:(<branch_name>) $ camp -t <tag>
+git:(<branch_name>) $ camp -t <tag> <commit_msg>
+git:(<branch_name>) $ camp -t <tag> -m <tag_msg>
+git:(<branch_name>) $ camp -t <tag> -m <tag_msg> <commit_msg>
+```
 </details>
 <details id="cmp">
     <summary><code style="color: #7694A6">cmp()</code></summary>
@@ -50,7 +88,17 @@ This function combines the steps of adding, committing and pushing.
 
 Use this function to commit and push already staged files. If no files are staged, `git add` the files you want to commit. If you want to commit all files, use the [camp](#camp) function
 
-    > cmp "My commit message"
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| commit_msg | Message for commit. | [] |
+
+Example:
+
+```sh
+git:(<branch_name>) $ cmp <commit_msg>
+```
+
 </details>
 <details id="gwtn">
     <summary><code style="color: #7694A6">gwtn()</code></summary>
@@ -61,7 +109,71 @@ Use this function to commit and push already staged files. If no files are stage
 
 For adding a new worktree. This function will create the worktree based on the latest, if any, existing GitHub code, installs npm, and does an initial push of the branch if it isn't already set up. Once you run this command, you will be ready to work on this worktree. This will work both existing and non-existing branches.
 
-    > gwtn projectname
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| branch_name | Name of branch/project. | [] |
+
+Examples:
+
+```sh
+git:(root) $ gwtn <branch_name>
+```
+
+</details>
+<details id="gwtm">
+    <summary><code style="color: #7694A6">gwtm()</code></summary>
+
+<br>
+
+**Git Worktree Make**
+
+For adding a new worktree, but not running `npm i`. This function will create the worktree based on the latest, if any, existing GitHub code, and does an initial push of the branch if it isn't already set up. Once you run this command, you will be ready to work on this worktree. This will work both existing and non-existing branches.
+
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| branch_name | Name of project. If empty, uses current directory. | [x] |
+
+Examples:
+
+```sh
+git:(root) $ gwtm <branch_name>
+```
+
+</details>
+<details id="gwtr">
+    <summary><code style="color: #7694A6">gwtr()</code></summary>
+
+<br>
+
+**Git Worktree Remove**
+
+For removing a worktree. This function will run by using the current location's branch, or by specifying a branch name. If the branch also needs to be deleted, use the `-d` flag.
+
+Arguments:
+
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| -d | Flag to include deleting the branch | [x] |
+| branch_name | Name of branch. If empty, uses current branch. | [x] |
+
+Examples:
+
+Remove the worktree of the current branch.
+
+```sh
+git:(<branch_name>) $ gwtr
+git:(<branch_name>) $ gwtr -d
+```
+
+Remove the worktree of a specific branch.
+
+```sh
+git:(root) $ gwtr <branch_name>
+git:(root) $ gwtr -d <branch_name>
+```
+
 </details>
 <details id="new">
     <summary><code style="color: #7694A6">new()</code></summary>
@@ -72,7 +184,12 @@ For adding a new worktree. This function will create the worktree based on the l
 
 Running this function creates an unobtrusive new `starter_branch` folder structure. It will add the `desktop/`, `mobile/`, `images/`, and `styles/` folders, as well as call [addkick](#addkick), so it will add the latest Kickoff code. If any folders of the same name already exist, they will be untouched and no new folder will be created, leaving all previous work safe, but giving us the opportunity to easily work with the latest code and structure.
 
-    > new
+Example:
+
+```sh
+git:(<branch_name>) $ new
+```
+
 </details>
 <details id="start">
     <summary><code style="color: #7694A6">start()</code></summary>
@@ -85,11 +202,19 @@ Running this function will run `gulp` in the styles folder of your current branc
 
 You can specify the location to run gulp by adding it after `start`
 
-    > start
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| folder_name | Name of folder enclosing Kickoff ( most commonly `styles/` ). | [x] |
 
-or specify
+Examples:
 
-    > start myfolder/styling
+```sh
+git:(<branch_name>) $ start
+
+git:(<branch_name>) $ start myfolder/styling
+```
+
 </details>
 <details id="stats">
     <summary><code style="color: #7694A6">stats()</code></summary>
@@ -102,11 +227,19 @@ Using this shows you, by default, the last 50 commits made to the repo.
 
 You can specify how many results you want to see by adding `-number` after `stats`
 
-    > stats
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| -# | Number of commits to view. Defaults to `-50` | [x] |
 
-or specify
+Examples:
 
-    > stats -10
+```sh
+git:(<branch_name>) $ stats
+
+git:(<branch_name>) $ stats -10
+```
+
 </details>
 
 <h3 style="display:inline-block"><b>Aliases</b></h3>
@@ -120,9 +253,14 @@ or specify
 
 Equivalent to [`git add`](https://git-scm.com/docs/git-add)
 
-    > add .
-    > add file.html
-    > add folder/
+```sh
+git:(<branch_name>) $ add .
+
+git:(<branch_name>) $ add file.html
+
+git:(<branch_name>) $ add folder/
+```
+
 </details>
 <details id="back">
     <summary><code style="color: #7694A6">back</code></summary>
@@ -133,7 +271,10 @@ Equivalent to [`git add`](https://git-scm.com/docs/git-add)
 
 This will take you back one commit in time.
 
-    > back
+```sh
+git:(<branch_name>) $ back
+```
+
 </details>
 <details id="branch">
     <summary><code style="color: #7694A6">branch</code></summary>
@@ -144,7 +285,10 @@ This will take you back one commit in time.
 
 Equivalent to [`git branch`](https://git-scm.com/docs/git-branch)
 
-    > branch myBranch
+```sh
+branch myBranch
+```
+
 </details>
 <details id="branches">
     <summary><code style="color: #7694A6">branches</code></summary>
@@ -155,7 +299,10 @@ Equivalent to [`git branch`](https://git-scm.com/docs/git-branch)
 
 This will return a list of all branches in the current repo.
 
-    > branches
+```sh
+branches
+```
+
 </details>
 <details id="cam">
     <summary><code style="color: #7694A6">cam</code></summary>
@@ -166,7 +313,17 @@ This will return a list of all branches in the current repo.
 
 Using this will add and commit, with a message, all the untracked files in your branch. If you don't want to commit all files, use the normal `add`, `commit -m` method.
 
-    > cam "My commit message"
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| commit_msg | Message for commit. | [] |
+
+Example:
+
+```sh
+git:(<branch_name>) $ cam <commit_msg>
+```
+
 </details>
 <details idch">
     <summary><code style="color: #7694A6">ch</code></summary>
@@ -177,7 +334,10 @@ Using this will add and commit, with a message, all the untracked files in your 
 
 Equivalent to [`git checkout`](https://git-scm.com/docs/git-checkout)
 
-    > ch branch-name
+```sh
+ch branch-name
+```
+
 </details>
 <details id="chr">
     <summary><code style="color: #7694A6">chr</code></summary>
@@ -188,7 +348,10 @@ Equivalent to [`git checkout`](https://git-scm.com/docs/git-checkout)
 
 Equivalent to `git checkout root`
 
-    > chr
+```sh
+chr
+```
+
 </details>
 <details id="chsb">
     <summary><code style="color: #7694A6">chsb</code></summary>
@@ -199,7 +362,10 @@ Equivalent to `git checkout root`
 
 Equivalent to `git checkout starter_branch`
 
-    > chsb
+```sh
+chsb
+```
+
 </details>
 <details idcm">
     <summary><code style="color: #7694A6">cm</code></summary>
@@ -210,7 +376,17 @@ Equivalent to `git checkout starter_branch`
 
 Equivalent to [`git commit`](https://git-scm.com/docs/git-commit)
 
-    > cm -m "My commit message"
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| commit_msg | Message for commit. | [] |
+
+Example:
+
+```sh
+git:(<branch_name>) $ cm -m <commit_msg>
+```
+
 </details>
 <details id="fetch">
     <summary><code style="color: #7694A6">fetch</code></summary>
@@ -221,7 +397,10 @@ Equivalent to [`git commit`](https://git-scm.com/docs/git-commit)
 
 Equivalent to [`git fetch`](https://git-scm.com/docs/git-fetch)
 
-    > fetch
+```sh
+fetch
+```
+
 </details>
 <details id="fuck">
     <summary><code style="color: #7694A6">fuck</code></summary>
@@ -234,7 +413,10 @@ As the name suggests, this is when you've made a terrible oopsie and need to rev
 
 <sub><b style="color: #DE897C">Caution: This is a HARD reset. It will delete all uncommitted work.</b></sub>
 
-    > fuck
+```sh
+git:(<branch_name>) $ fuck
+```
+
 </details>
 <details id="grs">
     <summary><code style="color: #7694A6">grs</code></summary>
@@ -245,7 +427,10 @@ As the name suggests, this is when you've made a terrible oopsie and need to rev
 
 Equivalent to [`git reset`](https://git-scm.com/docs/git-reset)
 
-    > grs origin/mybranch
+```sh
+git:(<branch_name>) $ grs origin/<branch_name>
+```
+
 </details>
 <details id="grv">
     <summary><code style="color: #7694A6">grv</code></summary>
@@ -258,7 +443,10 @@ Equivalent to [`git remote -v`](https://git-scm.com/docs/git-remote#Documentatio
 
 Use this alias to view the remotes you have referrenced on your machine.
 
-    > grv
+```sh
+grv
+```
+
 </details>
 <details id="gwt">
     <summary><code style="color: #7694A6">gwt</code></summary>
@@ -269,7 +457,10 @@ Use this alias to view the remotes you have referrenced on your machine.
 
 Equivalent to [`git worktree`](https://git-scm.com/docs/git-worktree)
 
-    > gwt add mybranch
+```sh
+git:(root) $ gwt add mybranch
+```
+
 </details>
 <details id="gwta">
     <summary><code style="color: #7694A6">gwta</code></summary>
@@ -280,7 +471,10 @@ Equivalent to [`git worktree`](https://git-scm.com/docs/git-worktree)
 
 Equivalent to [`git worktree add`](https://git-scm.com/docs/git-worktree#Documentation/git-worktree.txt-addltpathgtltcommit-ishgt)
 
-    > gwta mybranch
+```sh
+git:(root) $ gwta mybranch
+```
+
 </details>
 <details id="gwtl">
     <summary><code style="color: #7694A6">gwtl</code></summary>
@@ -291,18 +485,10 @@ Equivalent to [`git worktree add`](https://git-scm.com/docs/git-worktree#Documen
 
 Lists all worktrees
 
-    > gwtl
-</details>
-<details id="gwtr">
-    <summary><code style="color: #7694A6">gwtr</code></summary>
+```sh
+gwtl
+```
 
-<br>
-
-**Git Worktree Remove**
-
-Equivalent to [`git worktree remove`](https://git-scm.com/docs/git-worktree#Documentation/git-worktree.txt-remove)
-
-    > gwtr /path/to/branchName
 </details>
 <details id="peek">
     <summary><code style="color: #7694A6">peek</code></summary>
@@ -315,11 +501,19 @@ Using this alias allows you to view, by default, the last 20 commits on your cur
 
 Very similarly to [stats](#stats), you can specify how many commits you would like to see.
 
-    > peek
+Arguments:
+| Name | Function | Optional |
+| ---- | -------- | :------: |
+| -# | Number of commits to show. Defaults to `-20` | [x] |
 
-or specify
+Examples:
 
-    > peek -5
+```sh
+git:(<branch_name>) $ peek
+
+git:(<branch_name>) $ peek -5
+```
+
 </details>
 <details id="poke">
     <summary><code style="color: #7694A6">poke</code></summary>
@@ -330,7 +524,10 @@ or specify
 
 Equivalent to `git push origin/branchName`
 
-    > poke
+```sh
+git:(<branch_name>) $ poke
+```
+
 </details>
 <details id="pop">
     <summary><code style="color: #7694A6">pop</code></summary>
@@ -352,7 +549,10 @@ usage
 
 Equivalent to [`git pull`](https://git-scm.com/docs/git-pull)
 
-    > pull
+```sh
+git:(<branch_name>) $ pull
+```
+
 </details>
 <details id="push">
     <summary><code style="color: #7694A6">push</code></summary>
@@ -363,7 +563,10 @@ Equivalent to [`git pull`](https://git-scm.com/docs/git-pull)
 
 Equivalent to [`git push`](https://git-scm.com/docs/git-push)
 
-    > push
+```sh
+git:(<branch_name>) $ push
+```
+
 </details>
 <details id="rb">
     <summary><code style="color: #7694A6">rb</code></summary>
@@ -374,7 +577,10 @@ Equivalent to [`git push`](https://git-scm.com/docs/git-push)
 
 Equivalent to [`git rebase`](https://git-scm.com/docs/git-rebase)
 
-    > rb origin/branchName
+```sh
+git:(<branch_name>) $ rb origin/branchName
+```
+
 </details>
 <details id="s">
     <summary><code style="color: #7694A6">s</code></summary>
@@ -385,7 +591,10 @@ Equivalent to [`git rebase`](https://git-scm.com/docs/git-rebase)
 
 Shorthand equivalent to [`git status`](https://git-scm.com/docs/git-status)
 
-    > s
+```sh
+git:(<branch_name>) $ s
+```
+
 </details>
 <details id="shit">
     <summary><code style="color: #7694A6">shit</code></summary>
@@ -396,7 +605,10 @@ Shorthand equivalent to [`git status`](https://git-scm.com/docs/git-status)
 
 Like the name suggests, you would use this when you make a mistake and need to revert to the latest commit.
 
-    > shit
+```sh
+git:(<branch_name>) $ shit
+```
+
 </details>
 <details id="stash">
     <summary><code style="color: #7694A6">stash</code></summary>
@@ -407,9 +619,18 @@ Like the name suggests, you would use this when you make a mistake and need to r
 
 Equivalent to [`git stash`](https://git-scm.com/docs/git-stash)
 
-    > stash .
-    > stash myFile.js
-    > stash myFolder/
+```sh
+git:(<branch_name>) $ stash .
+```
+
+```sh
+git:(<branch_name>) $ stash myFile.js
+```
+
+```sh
+git:(<branch_name>) $ stash myFolder/
+```
+
 </details>
 <details id="stashed">
     <summary><code style="color: #7694A6">stashed</code></summary>
@@ -420,7 +641,10 @@ Equivalent to [`git stash`](https://git-scm.com/docs/git-stash)
 
 This shows the current stashed files.
 
-    > stashed
+```sh
+git:(<branch_name>) $ stashed
+```
+
 </details>
 <details id="tug">
     <summary><code style="color: #7694A6">tug</code></summary>
@@ -431,7 +655,10 @@ This shows the current stashed files.
 
 Equivalent to `git pull origin/branchName`
 
-    > tug
+```sh
+git:(<branch_name>) $ tug
+```
+
 </details>
 
 <br>
@@ -447,8 +674,8 @@ Equivalent to `git pull origin/branchName`
 
 Using this function will open your `.profile` in VS Code, allowing you to make updates to your aliases and functions.
 
-```
-> config
+```sh
+config
 ```
 </details>
 
@@ -460,7 +687,7 @@ Using this function will open your `.profile` in VS Code, allowing you to make u
 **Reload .profile**
 
 Using this function will allow you to reload and use any changes made to your `.profile` without needed to close your terminal.
-```
-> reload
+```sh
+reload
 ```
 </details>

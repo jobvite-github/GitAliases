@@ -1,31 +1,106 @@
 #============================================================
 #
-#  GITHUB ALIASES AND FUNCTIONS
+#= Config Values
+#= SET THESE VALUES TO ENSURE YOUR ALIASES WORK CORRECTLY
+#	Set your CWSPATH variable to your CWS folder's path.
 #
-#  Arguably, some functions defined here are quite big.
-#  If you want to make this file smaller, these functions can
-#+ be converted into scripts and removed from here.
+#============================================================
+CWSPATH=~/Jobvite/CWS/
+#============================================================
+
+#============================================================
+#
+#  Global Variables
+#	Variables for the current branch, and its path.
+#
+#============================================================
+BRANCH=$(git branch |grep \* | cut -d " " -f2)
+BRANCHPATH=$CWSPATH/$BRANCH/
+#============================================================
+
+#============================================================
+#
+#  GITHUB ALIASES AND FUNCTIONS
 #
 #============================================================
 function addkick() {
-    echo "parameters: $@";
-    echo "$@/styles";
-    if [[ $1 != "" ]]
-        pushd $PWD && mkdir styles && styles && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git && popd
-    then
-        pushd $PWD && mkdir $@/styles && $@/styles && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git && popd
-    fi
+	pushd $PWD && mkdir $@/styles && $@/styles && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git && popd
 }
 function camp() {
-    git add .
-    if [[ $1 != "" ]]
-    then
-        git commit -m $1
+    # Usage
+    #= camp
+    #= camp <commit_msg>
+    #= camp -t <tag>
+    #= camp -t <tag> <commit_msg>
+    #= camp -t <tag> -m <msg>
+    #= camp -t <tag> -m <msg> <commit_msg>
+    #
+    # You can specify a branch name by adding that branch name at
+    #    the end of the function call. Example:
+    #        camp <commit_msg> <branch_name>
+    #-------------------------------------------------------------
+    local branch=$(git branch |grep \* | cut -d " " -f2)
+
+    # Flags
+    m=false		#commit message flag
+    t=false		#Includes tag
+    tm=false	#tag message flag
+    f=false		#forced flag
+    # Messages / Tag
+    tag=""
+    msg=""		#commit message
+    tmg=""		#tag message
+
+    for (( i = 1; i <= $#; i += 1 )); do
+        if [[ ${@[$i]} == '-t' ]] then # if tagged
+            t=true
+            i+=1
+            tag=${@[$i]}
+        elif [[ ${@[$i]} == '-m' ]] then # if tag and commit msg
+            tm=true
+            i+=1
+            tmg=${@[$i]}
+        elif [[ ${@[$i]} == '-f' ]] then # if force pushed
+            f=true
+        elif [[ ${@[$i]} != "" ]] then
+            git show-ref --quiet refs/remotes/origin/${@[$i]}
+
+            if [[ $? == 0 ]] then # if last parameter is specified branch
+                branch=${@[$i]}
+            else # if it isn't a flag or a branch, it must be a commit message
+                m=true
+                msg=${@[$i]}
+            fi
+        fi
+    done
+
+    if ( $m ) then
     else
-        # empty camp sets origin to origin/current_branch
-        git push -u origin $(git symbolic-ref --short HEAD) $2
+        m=true
+        msg=$tmg
     fi
-    git push $2
+
+    # echo '------ tags -------'
+    # echo 'm: ' $m
+    # echo 't: ' $t
+    # echo 'tm: ' $tm
+    # echo 'f: ' $f
+    # echo
+    # echo '------ info -------'
+    # echo 'tag: ' $tag
+    # echo 'tmg: ' $tmg
+    # echo 'msg: ' $msg
+    # echo 'branch: ' $branch
+
+    git add .
+
+    git commit -m $msg
+    git push origin $branch $forced
+
+    if ( $t ) then
+        git tag -a $tag -m $tmg
+        git push origin --tags
+    fi
 }
 function cmp() {
     if [[ $1 != "" ]]
@@ -37,31 +112,58 @@ function cmp() {
     fi
     git push $2
 }
-function gwtm() {
-    if [[ $1 != "" ]]
-    then
-        ~/Jobvite/CWS && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" && git push --set-upstream origin $(git symbolic-ref --short HEAD)
-    else
-        echo 'Gotta name that shit, bud.'
-    fi
-}
 function gwtn() {
     if [[ $1 != "" ]] then
-		git show-branch refs/remotes/origin/${1}
-		if [[ $? == 0 ]] then
-        	~/Jobvite/CWS && git checkout starter_branch && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && npm i && .. && code .
-		else
-        	~/Jobvite/CWS && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && npm i && .. && git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" && git push --set-upstream origin $(git symbolic-ref --short HEAD) && code .
-		fi
+        git show-ref --quiet refs/remotes/origin/${1}
+        if [[ $? == 0 ]] then
+            $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && git push --set-upstream origin ${1} && styles/ && npm i && .. && code .
+        else
+            $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && npm i && .. && git commit -am "Setting up $1" && git push --set-upstream origin ${1} && code .
+        fi
     else
-        echo 'Gotta name that shit, bud.'
+        echo 'Add a worktree name ( e.x. gwtn myworktree )'
+    fi
+}
+function gwtr() {
+	branchExists=1
+	local branch=$(git branch |grep \* | cut -d " " -f2)
+
+	if [[ $1 != "" ]] then
+		branch=$1
+	elif [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]] then
+		echo "You can't use gwtr in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr"
+		return 1
+    fi
+
+	$CWSPATH && $branch
+
+	git show-ref --quiet refs/remotes/origin/$branch
+
+	if [[ $? == 0 ]] then # if last parameter is specified branch
+		git push origin --delete $branch
+	fi
+
+	$CWSPATH
+	git worktree remove $branch
+	git branch -D $branch
+}
+function gwtm() {
+    if [[ $1 != "" ]] then
+        git show-ref --quiet refs/remotes/origin/${1}
+        if [[ $? == 0 ]] then
+            $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && git push --set-upstream origin ${1}
+        else
+            $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && git commit -am "Setting up $1" && git push --set-upstream origin ${1}
+        fi
+    else
+        echo 'Add a worktree name ( e.x. gwtm myworktree )'
     fi
 }
 function new() {
-	if [ -d desktop/ ] || mkdir desktop && touch desktop/.gitkeep
-	if [ -d mobile/ ] || mkdir mobile && touch mobile/.gitkeep
-	if [ -d images/ ] || mkdir images && touch images/.gitkeep
-	if [ -d styles/ ] || addkick
+    if [ -d desktop/ ] || mkdir desktop && touch desktop/.gitkeep
+    if [ -d mobile/ ] || mkdir mobile && touch mobile/.gitkeep
+    if [ -d images/ ] || mkdir images && touch images/.gitkeep
+    if [ -d styles/ ] || addkick
 }
 function start() {
     if [[ $1 != "" ]]
@@ -88,6 +190,26 @@ function start() {
 function stats() {
     git log --stat --all --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-50}
 }
+
+# Tagging
+function tagging() {
+	if [[ $1 == "-D" ]] then
+		git tag -d $2
+		git push --delete origin $2
+		return 1
+	elif [[ $1 != "" ]] then
+		git tag -a $1 -m "Updating to ${1}"
+		git push origin $1
+		return 1
+	else
+		echo 'Add a version ( e.x. tagging v1.0 )'
+    fi
+}
+alias tag='git tag'
+alias tags='git tag -l'
+alias tug='git pull'
+#End Tagging
+
 #-------------------------------------------------------------
 # GitHub Aliases
 #-------------------------------------------------------------
@@ -114,7 +236,7 @@ alias grv='git remote -v'
 alias gwt='git worktree'
 alias gwta='git worktree add'
 alias gwtl='git worktree list'
-alias gwtr='git worktree remove'
+alias gwtrm='git worktree remove'
 alias lga='git log --graph --all --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)"'
 alias mg='git merge'
 alias newb='git checkout -b'
@@ -137,7 +259,6 @@ alias sta='git add . && git stash'
 alias stash='git add . && git stash'
 alias stashed='git stash show'
 alias tag='git tag'
-alias tagging='git tag -a $1 -m $2 && git push origin --tags'
 alias tags='git tag -l'
 alias tug='git pull'
 alias whichup=whichupstream='git branch -vv'

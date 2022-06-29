@@ -62,10 +62,10 @@ This function combines the steps of adding, committing and pushing. It also allo
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
+| commit_msg | Message for commit. Technically optional, but not recommended to exclude |  |
 | -t | Flag for adding a tag | x |
 | tag | Value for tag (i.e., v1.0) | x |
 | tag_msg | Message for tag | x |
-| commit_msg | Message for commit. Technically optional, but not recommended to exclude |  |
 | branch_name | Name of project. If empty, uses current directory. | x |
 | -f | Flag for a force push | x |
 

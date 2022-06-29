@@ -1,3 +1,8 @@
+<style>
+	summary code {color: #7694A6}
+	.warn {color: #DE897C}
+</style>
+
 # Git Alias / Function Documentation
 
 To get started, you will need to add the code in the [.profile](./.profile) file to your `.profile` file in your User directory ( `~/` ).
@@ -23,10 +28,10 @@ After you put the latest code in your `.profile`, make sure you update the `CWSP
 
 If your CWS folder is in your User Directory, for example, you would change `CWSPATH` from `~/Jobvite/CWS` to `~/CWS`. Prior to the latest updates, you had to replace the `~/Jobvite/CWS/` in multiple places.
 
-<h3 style="display:inline-block"><b>Functions</b></h3>
+<h3><b>Functions</b></h3>
 
 <details id="addkick">
-    <summary><code style="color: #7694A6">addkick()</code></summary>
+    <summary><code>addkick()</code></summary>
 
 <br>
 
@@ -49,7 +54,7 @@ git:(<branch_name>) $ addkick ./myfolder
 ```
 </details>
 <details id="camp">
-    <summary><code style="color: #7694A6">camp()</code></summary>
+    <summary><code>camp()</code></summary>
 
 <br>
 
@@ -57,7 +62,7 @@ git:(<branch_name>) $ addkick ./myfolder
 
 This function combines the steps of adding, committing and pushing. It also allows for tagging, if you feel so inclined. You can specify which branch you want to push, or `cd` into that branch and use the function without specifying.
 
-<sub><b style="color: #DE897C">Caution: This will add all unstaged files. If you want to add only specific files, do a manual `git add` of the files you want, and then use the [cmp](#cmp) function or [cam](#cam) alias</b></sub>
+<sub class="warn"><b>Caution: This will add all unstaged files. If you want to add only specific files, do a manual `git add` of the files you want, and then use the [cmp](#cmp) function or [cam](#cam) alias</b></sub>
 
 Arguments:
 | Name | Function | Optional |
@@ -82,7 +87,7 @@ git:(<branch_name>) $ camp -t <tag> -m <tag_msg> <commit_msg>
 ```
 </details>
 <details id="cmp">
-    <summary><code style="color: #7694A6">cmp()</code></summary>
+    <summary><code>cmp()</code></summary>
 
 <br>
 
@@ -103,7 +108,7 @@ git:(<branch_name>) $ cmp <commit_msg>
 
 </details>
 <details id="gwtn">
-    <summary><code style="color: #7694A6">gwtn()</code></summary>
+    <summary><code>gwtn()</code></summary>
 
 <br>
 
@@ -124,7 +129,7 @@ git:(root) $ gwtn <branch_name>
 
 </details>
 <details id="gwtm">
-    <summary><code style="color: #7694A6">gwtm()</code></summary>
+    <summary><code>gwtm()</code></summary>
 
 <br>
 
@@ -145,7 +150,7 @@ git:(root) $ gwtm <branch_name>
 
 </details>
 <details id="gwtr">
-    <summary><code style="color: #7694A6">gwtr()</code></summary>
+    <summary><code>gwtr()</code></summary>
 
 <br>
 
@@ -178,7 +183,7 @@ git:(root) $ gwtr -d <branch_name>
 
 </details>
 <details id="new">
-    <summary><code style="color: #7694A6">new()</code></summary>
+    <summary><code>new()</code></summary>
 
 <br>
 
@@ -194,7 +199,7 @@ git:(<branch_name>) $ new
 
 </details>
 <details id="start">
-    <summary><code style="color: #7694A6">start()</code></summary>
+    <summary><code>start()</code></summary>
 
 <br>
 
@@ -219,7 +224,7 @@ git:(<branch_name>) $ start myfolder/styling
 
 </details>
 <details id="stats">
-    <summary><code style="color: #7694A6">stats()</code></summary>
+    <summary><code>stats()</code></summary>
 
 <br>
 
@@ -244,10 +249,10 @@ git:(<branch_name>) $ stats -10
 
 </details>
 
-<h3 style="display:inline-block"><b>Aliases</b></h3>
+<h3><b>Aliases</b></h3>
 
 <details id="add">
-    <summary><code style="color: #7694A6">add</code></summary>
+    <summary><code>add</code></summary>
 
 <br>
 
@@ -265,7 +270,7 @@ git:(<branch_name>) $ add folder/
 
 </details>
 <details id="back">
-    <summary><code style="color: #7694A6">back</code></summary>
+    <summary><code>back</code></summary>
 
 <br>
 
@@ -279,7 +284,7 @@ git:(<branch_name>) $ back
 
 </details>
 <details id="branch">
-    <summary><code style="color: #7694A6">branch</code></summary>
+    <summary><code>branch</code></summary>
 
 <br>
 
@@ -293,7 +298,7 @@ branch myBranch
 
 </details>
 <details id="branches">
-    <summary><code style="color: #7694A6">branches</code></summary>
+    <summary><code>branches</code></summary>
 
 <br>
 
@@ -307,7 +312,7 @@ branches
 
 </details>
 <details id="cam">
-    <summary><code style="color: #7694A6">cam</code></summary>
+    <summary><code>cam</code></summary>
 
 <br>
 
@@ -328,7 +333,7 @@ git:(<branch_name>) $ cam <commit_msg>
 
 </details>
 <details idch">
-    <summary><code style="color: #7694A6">ch</code></summary>
+    <summary><code>ch</code></summary>
 
 <br>
 
@@ -342,7 +347,7 @@ ch branch-name
 
 </details>
 <details id="chr">
-    <summary><code style="color: #7694A6">chr</code></summary>
+    <summary><code>chr</code></summary>
 
 <br>
 
@@ -356,7 +361,7 @@ chr
 
 </details>
 <details id="chsb">
-    <summary><code style="color: #7694A6">chsb</code></summary>
+    <summary><code>chsb</code></summary>
 
 <br>
 
@@ -370,7 +375,7 @@ chsb
 
 </details>
 <details idcm">
-    <summary><code style="color: #7694A6">cm</code></summary>
+    <summary><code>cm</code></summary>
 
 <br>
 
@@ -391,7 +396,7 @@ git:(<branch_name>) $ cm -m <commit_msg>
 
 </details>
 <details id="fetch">
-    <summary><code style="color: #7694A6">fetch</code></summary>
+    <summary><code>fetch</code></summary>
 
 <br>
 
@@ -405,7 +410,7 @@ fetch
 
 </details>
 <details id="fuck">
-    <summary><code style="color: #7694A6">fuck</code></summary>
+    <summary><code>fuck</code></summary>
 
 <br>
 
@@ -413,7 +418,7 @@ fetch
 
 As the name suggests, this is when you've made a terrible oopsie and need to revert back to the `origin/master` branch.
 
-<sub><b style="color: #DE897C">Caution: This is a HARD reset. It will delete all uncommitted work.</b></sub>
+<sub><b>Caution: This is a HARD reset. It will delete all uncommitted work.</b></sub>
 
 ```sh
 git:(<branch_name>) $ fuck
@@ -421,7 +426,7 @@ git:(<branch_name>) $ fuck
 
 </details>
 <details id="grs">
-    <summary><code style="color: #7694A6">grs</code></summary>
+    <summary><code>grs</code></summary>
 
 <br>
 
@@ -435,7 +440,7 @@ git:(<branch_name>) $ grs origin/<branch_name>
 
 </details>
 <details id="grv">
-    <summary><code style="color: #7694A6">grv</code></summary>
+    <summary><code>grv</code></summary>
 
 <br>
 
@@ -451,7 +456,7 @@ grv
 
 </details>
 <details id="gwt">
-    <summary><code style="color: #7694A6">gwt</code></summary>
+    <summary><code>gwt</code></summary>
 
 <br>
 
@@ -465,7 +470,7 @@ git:(root) $ gwt add mybranch
 
 </details>
 <details id="gwta">
-    <summary><code style="color: #7694A6">gwta</code></summary>
+    <summary><code>gwta</code></summary>
 
 <br>
 
@@ -479,7 +484,7 @@ git:(root) $ gwta mybranch
 
 </details>
 <details id="gwtl">
-    <summary><code style="color: #7694A6">gwtl</code></summary>
+    <summary><code>gwtl</code></summary>
 
 <br>
 
@@ -493,7 +498,7 @@ gwtl
 
 </details>
 <details id="peek">
-    <summary><code style="color: #7694A6">peek</code></summary>
+    <summary><code>peek</code></summary>
 
 <br>
 
@@ -518,7 +523,7 @@ git:(<branch_name>) $ peek -5
 
 </details>
 <details id="poke">
-    <summary><code style="color: #7694A6">poke</code></summary>
+    <summary><code>poke</code></summary>
 
 <br>
 
@@ -532,7 +537,7 @@ git:(<branch_name>) $ poke
 
 </details>
 <details id="pop">
-    <summary><code style="color: #7694A6">pop</code></summary>
+    <summary><code>pop</code></summary>
 
 <br>
 
@@ -543,7 +548,7 @@ Equivalent to [`stash pop`](https://git-scm.com/docs/git-stash#Documentation/git
 usage
 </details>
 <details id="pull">
-    <summary><code style="color: #7694A6">pull</code></summary>
+    <summary><code>pull</code></summary>
 
 <br>
 
@@ -557,7 +562,7 @@ git:(<branch_name>) $ pull
 
 </details>
 <details id="push">
-    <summary><code style="color: #7694A6">push</code></summary>
+    <summary><code>push</code></summary>
 
 <br>
 
@@ -571,7 +576,7 @@ git:(<branch_name>) $ push
 
 </details>
 <details id="rb">
-    <summary><code style="color: #7694A6">rb</code></summary>
+    <summary><code>rb</code></summary>
 
 <br>
 
@@ -585,7 +590,7 @@ git:(<branch_name>) $ rb origin/branchName
 
 </details>
 <details id="s">
-    <summary><code style="color: #7694A6">s</code></summary>
+    <summary><code>s</code></summary>
 
 <br>
 
@@ -599,7 +604,7 @@ git:(<branch_name>) $ s
 
 </details>
 <details id="shit">
-    <summary><code style="color: #7694A6">shit</code></summary>
+    <summary><code>shit</code></summary>
 
 <br>
 
@@ -613,7 +618,7 @@ git:(<branch_name>) $ shit
 
 </details>
 <details id="stash">
-    <summary><code style="color: #7694A6">stash</code></summary>
+    <summary><code>stash</code></summary>
 
 <br>
 
@@ -635,7 +640,7 @@ git:(<branch_name>) $ stash myFolder/
 
 </details>
 <details id="stashed">
-    <summary><code style="color: #7694A6">stashed</code></summary>
+    <summary><code>stashed</code></summary>
 
 <br>
 
@@ -649,7 +654,7 @@ git:(<branch_name>) $ stashed
 
 </details>
 <details id="tug">
-    <summary><code style="color: #7694A6">tug</code></summary>
+    <summary><code>tug</code></summary>
 
 <br>
 
@@ -665,10 +670,10 @@ git:(<branch_name>) $ tug
 
 <br>
 
-<h3 style="display:inline-block"><b>Configuration</b></h3>
+<h3><b>Configuration</b></h3>
 
 <details id="config">
-    <summary><code style="color: #7694A6">config</code></summary>
+    <summary><code>config</code></summary>
 
 <br>
 
@@ -682,7 +687,7 @@ config
 </details>
 
 <details id="reload">
-    <summary><code style="color: #7694A6">reload</code></summary>
+    <summary><code>reload</code></summary>
 
 <br>
 

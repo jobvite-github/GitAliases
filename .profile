@@ -95,7 +95,7 @@ function camp() {
     git add .
 
     git commit -m $msg
-    git push origin $branch $forced
+    git push origin $branch $f
 
     if ( $t ) then
         git tag -a $tag -m $tmg

@@ -65,7 +65,7 @@ Arguments:
 | -t | Flag for adding a tag | [x] |
 | tag | Value for tag (i.e., v1.0) | [x] |
 | tag_msg | Message for tag | [x] |
-| commit_msg | Message for commit. Technically optional, but not recommended to exclude | [] |
+| commit_msg | Message for commit. Technically optional, but not recommended to exclude | [  ] |
 | branch_name | Name of project. If empty, uses current directory. | [x] |
 
 Examples:
@@ -91,7 +91,7 @@ Use this function to commit and push already staged files. If no files are stage
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. | [] |
+| commit_msg | Message for commit. | [  ] |
 
 Example:
 
@@ -112,7 +112,7 @@ For adding a new worktree. This function will create the worktree based on the l
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| branch_name | Name of branch/project. | [] |
+| branch_name | Name of branch/project. | [  ] |
 
 Examples:
 
@@ -316,7 +316,7 @@ Using this will add and commit, with a message, all the untracked files in your 
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. | [] |
+| commit_msg | Message for commit. | [  ] |
 
 Example:
 
@@ -379,7 +379,7 @@ Equivalent to [`git commit`](https://git-scm.com/docs/git-commit)
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. | [] |
+| commit_msg | Message for commit. | [  ] |
 
 Example:
 

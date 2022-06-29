@@ -1,8 +1,3 @@
-<style>
-	summary code {color: #7694A6}
-	.warn {color: #DE897C}
-</style>
-
 # Git Alias / Function Documentation
 
 To get started, you will need to add the code in the [.profile](./.profile) file to your `.profile` file in your User directory ( `~/` ).

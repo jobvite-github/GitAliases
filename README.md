@@ -38,7 +38,7 @@ You can specify where you would like to put it by adding in the path after `addk
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| branch_name | Name of directory to store kickoff. If empty, uses current directory. | [x] |
+| branch_name | Name of directory to store kickoff. If empty, uses current directory. | x |
 
 Examples:
 
@@ -62,16 +62,18 @@ This function combines the steps of adding, committing and pushing. It also allo
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| -t | Flag for adding a tag | [x] |
-| tag | Value for tag (i.e., v1.0) | [x] |
-| tag_msg | Message for tag | [x] |
-| commit_msg | Message for commit. Technically optional, but not recommended to exclude | [  ] |
-| branch_name | Name of project. If empty, uses current directory. | [x] |
+| -t | Flag for adding a tag | x |
+| tag | Value for tag (i.e., v1.0) | x |
+| tag_msg | Message for tag | x |
+| commit_msg | Message for commit. Technically optional, but not recommended to exclude |  |
+| branch_name | Name of project. If empty, uses current directory. | x |
+| -f | Flag for a force push | x |
 
 Examples:
 
 ```sh
 git:(<branch_name>) $ camp <commit_msg>
+git:(<branch_name>) $ camp <commit_msg> -f
 git:(<branch_name>) $ camp <commit_msg> <branch_name>
 git:(<branch_name>) $ camp -t <tag>
 git:(<branch_name>) $ camp -t <tag> <commit_msg>
@@ -91,7 +93,7 @@ Use this function to commit and push already staged files. If no files are stage
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. | [  ] |
+| commit_msg | Message for commit. |  |
 
 Example:
 
@@ -112,7 +114,7 @@ For adding a new worktree. This function will create the worktree based on the l
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| branch_name | Name of branch/project. | [  ] |
+| branch_name | Name of branch/project. |  |
 
 Examples:
 
@@ -133,7 +135,7 @@ For adding a new worktree, but not running `npm i`. This function will create th
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| branch_name | Name of project. If empty, uses current directory. | [x] |
+| branch_name | Name of project. If empty, uses current directory. | x |
 
 Examples:
 
@@ -155,8 +157,8 @@ Arguments:
 
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| -d | Flag to include deleting the branch | [x] |
-| branch_name | Name of branch. If empty, uses current branch. | [x] |
+| -d | Flag to include deleting the branch | x |
+| branch_name | Name of branch. If empty, uses current branch. | x |
 
 Examples:
 
@@ -205,7 +207,7 @@ You can specify the location to run gulp by adding it after `start`
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| folder_name | Name of folder enclosing Kickoff ( most commonly `styles/` ). | [x] |
+| folder_name | Name of folder enclosing Kickoff ( most commonly `styles/` ). | x |
 
 Examples:
 
@@ -230,7 +232,7 @@ You can specify how many results you want to see by adding `-number` after `stat
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| -# | Number of commits to view. Defaults to `-50` | [x] |
+| -# | Number of commits to view. Defaults to `-50` | x |
 
 Examples:
 
@@ -316,7 +318,7 @@ Using this will add and commit, with a message, all the untracked files in your 
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. | [  ] |
+| commit_msg | Message for commit. |  |
 
 Example:
 
@@ -379,7 +381,7 @@ Equivalent to [`git commit`](https://git-scm.com/docs/git-commit)
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. | [  ] |
+| commit_msg | Message for commit. |  |
 
 Example:
 
@@ -504,7 +506,7 @@ Very similarly to [stats](#stats), you can specify how many commits you would li
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| -# | Number of commits to show. Defaults to `-20` | [x] |
+| -# | Number of commits to show. Defaults to `-20` | x |
 
 Examples:
 

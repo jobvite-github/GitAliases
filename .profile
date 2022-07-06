@@ -171,26 +171,25 @@ function new() {
     if [ -d styles/ ] || addkick
 }
 function start() {
-    if [[ $1 != "" ]]
-    then
-        $BRANCH/${@}/**/styles && npm i && gulp
-    else
-        if [ -d $BRANCH/styles/ ]
-        then
-            $BRANCH/styles/ && npm i && gulp
-        elif [ -d $BRANCH/**/styles/ ]
-        then
-            $BRANCH/**/styles/ && npm i && gulp
-        elif [ -d $BRANCH/style/ ]
-        then
-            $BRANCH/style/ && npm i && gulp
-        elif [ -d $BRANCH/**/style/ ]
-        then
-            $BRANCH/**/style/ && npm i && gulp
-        else
-            echo 'No styles or style folder found in the parent directory'
-        fi
-    fi
+	$BRANCHPATH
+
+	for SDIR in `fnd ${1=.} \*style\*`
+	do
+		if [ -f $SDIR/package.json ]
+		then
+			echo $BGreen 'Starting Kickoff in ' $SDIR $NC
+			echo
+			$SDIR && npm i && gulp
+			return 1
+		fi
+	done
+
+	echo $BRed'No styles directory found.'$NC
+	echo $Bold'\tUse addkick to add Kickoff to your project. Or specify in which folder, not including, your Kickoff exists:'$NC
+	echo $BRed'incorrect usage:'
+	echo 'start /path/to/styles'$NC
+	echo $BGreen'correct usage:'
+	echo 'start /path/to'$NC
 }
 function stats() {
     git log --stat --all --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-50}
@@ -364,6 +363,38 @@ alias lm='ll |more'        #  Pipe through 'more'
 alias lr='ll -R'           #  Recursive ls.
 alias la='ll -A'           #  Show hidden files.
 alias tree='tree -Csuh'    #  Nice alternative to 'recursive ls' ...
+
+#-------------------------------------------------------------
+# Find Helpers
+#-------------------------------------------------------------
+function fn() {
+	if [[ $3 != "" ]]
+	then
+		find $1 -name "$2" -prune -maxdepth $3
+	elif [[ $2 != "" ]]
+	then
+		find $1 -name "$2" -prune -maxdepth 1
+	elif [[ $1 != "" ]]
+	then
+		find . -name "$1" -prune -maxdepth 1
+	else
+		echo 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
+	fi
+}
+function fnd() {
+	if [[ $3 != "" ]]
+	then
+		find $1 -name "$2" -type d -prune -maxdepth $3
+	elif [[ $2 != "" ]]
+	then
+		find $1 -name "$2" -type d -prune -maxdepth 1
+	elif [[ $1 != "" ]]
+	then
+		find . -name "$1" -type d -prune -maxdepth 1
+	else
+		echo 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
+	fi
+}
 
 #-------------------------------------------------------------
 # Load / Edit .profile

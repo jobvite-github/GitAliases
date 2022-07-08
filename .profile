@@ -121,9 +121,9 @@ function gwtn() {
     if [[ $1 != "" ]] then
         git show-ref --quiet refs/remotes/origin/${1}
         if [[ $? == 0 ]] then
-            $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && git push --set-upstream origin ${1} && styles/ && npm i && .. && code .
+            $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && git push --set-upstream origin ${1} && styles/ && ncu -u && npm install && npm audit fix && .. && code .
         else
-            $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && npm i && .. && git commit -am "Setting up $1" && git push --set-upstream origin ${1} && code .
+            $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add ${1} && git checkout root && ${1}/ && mkdir _dev && styles/ && ncu -u && npm install && npm audit fix && .. && git commit -am "Setting up $1" && git push --set-upstream origin ${1} && code .
         fi
     else
         echo 'Add a worktree name ( e.x. gwtn myworktree )'
@@ -171,25 +171,39 @@ function new() {
     if [ -d styles/ ] || addkick
 }
 function start() {
-	$BRANCHPATH
+	dir=''
 
-	for SDIR in `fnd ${1=.} \*style\*`
+	trap 'echo && echo $BYellow"...Kickoff Stopped"$NC' 2
+
+	if [ -f package.json ]
+	then
+		dir=$(dirname 'package.json')
+	fi
+
+	for (( i=1; i <= 3; i++ ))
 	do
-		if [ -f $SDIR/package.json ]
-		then
-			echo $BGreen 'Starting Kickoff in ' $SDIR $NC
-			echo
-			$SDIR && npm i && gulp
-			return 1
-		fi
+		for SDIR in `fn ${1=.} 'package.json' $i`
+		do
+			dir=$(dirname $SDIR)
+		done
+		[[ $dir != '' ]] && break
 	done
 
-	echo $BRed'No styles directory found.'$NC
-	echo $Bold'\tUse addkick to add Kickoff to your project. Or specify in which folder, not including, your Kickoff exists:'$NC
-	echo $BRed'incorrect usage:'
-	echo 'start /path/to/styles'$NC
-	echo $BGreen'correct usage:'
-	echo 'start /path/to'$NC
+	if [[ $dir != '' ]]
+	then
+		$dir
+		echo $BGreen'Starting Kickoff in '$dir $NC
+		echo
+		echo $BYellow'To stop, press Control-C'$NC
+		ncu -u && npm install && npm audit fix && gulp
+	else
+		echo $BRed'No Kickoff found in' $PWD$NC
+		echo $Bold'Use addkick to add Kickoff to your project. Or specify in which folder, not including, your Kickoff exists:'$NC
+		echo $BRed'incorrect usage:'
+		echo 'start /path/to/styles'$NC
+		echo $BGreen'correct usage:'
+		echo 'start /path/to'$NC
+	fi
 }
 function stats() {
     git log --stat --all --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-50}

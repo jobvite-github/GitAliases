@@ -184,9 +184,8 @@ function new() {
     if [ -d styles/ ] || addkick
 }
 function start() {
+	# Directory containing package.json
 	dir=''
-
-	trap 'echo && echo $BYellow"...Kickoff Stopped"$NC' 2
 
 	if [ -f package.json ]
 	then
@@ -204,18 +203,29 @@ function start() {
 
 	if [[ $dir != '' ]]
 	then
+		# Catch for exiting on ctrl+c for exit message and returning from packaged dir
+		home=$PWD
+		trap 'echo && echo $(colorText $cInfo "...Kickoff Stopped") && $home' 1 2 3 6
+
+		# cd to dir containing package.json
 		$dir
-		echo $BGreen'Starting Kickoff in '$dir $NC
+
+		# Start message
+		echo $(colorText $cSuccess 'Starting Kickoff in '"$(formatText 'bold' $dir)")
 		echo
-		echo $BYellow'To stop, press Control-C'$NC
+		echo $(formatText 'bold' "$(colorText $cInfo 'To stop, press Control-C')")
+
+		# update npm, install package.json, npm audit fit, then gulp
 		ncu -u && npm install && npm audit fix && gulp
 	else
-		echo $BRed'No Kickoff found in' $PWD$NC
-		echo $Bold'Use addkick to add Kickoff to your project. Or specify in which folder, not including, your Kickoff exists:'$NC
-		echo $BRed'incorrect usage:'
-		echo 'start /path/to/styles'$NC
-		echo $BGreen'correct usage:'
-		echo 'start /path/to'$NC
+		echo $(formatText 'bold' "$(colorText $cWarning '! There is no Kickoff found in '$PWD/$1 '!')")
+		echo '\ncd into the correct directory,\nuse command\n'
+		echo $(formatText 'bold' "$(colorText $cInfo ' > addkick')")
+		echo '\nto add a new Kickoff to your project,\nor specify in which folder, not including, your Kickoff exists by doing:\n'
+		echo $(formatText 'bold' "$(colorText $cInfo ' > start path/to')")
+		echo
+		echo $(formatText 'bold' underline 'Hold up! Wait a minute. Make sure you read ^this^ before you move on.')
+		echo
 	fi
 }
 function stats() {
@@ -310,7 +320,88 @@ alias ncuif='ncu -u && npm install && npm audit fix'
 #  For example, I see 'Bold Red' as 'orange' on my screen,
 #  hence the 'Green' 'BRed' 'Red' sequence I often use in my prompt.
 #
+#  fromhex: https://gist.github.com/mhulse/b11e568260fb8c3aa2a8
+#
 #-------------------------------------------------------------
+
+# tput color formatting
+colorEnd=$(tput sgr0)
+
+#============================================================
+#
+#= tput colors
+#
+#============================================================
+
+cSuccess='41'
+cWarning='178'
+cError='160'
+cInfo='44'
+
+#============================================================
+function fromhex() {
+	hex=$1
+	if [[ $hex == "#"* ]]; then
+		hex=$(echo $1 | awk '{print substr($0,2)}')
+	fi
+	r=$(printf '0x%0.2s' "$hex")
+	g=$(printf '0x%0.2s' ${hex#??})
+	b=$(printf '0x%0.2s' ${hex#????})
+	echo -e `printf "%03d" "$(((r<75?0:(r-35)/40)*6*6+(g<75?0:(g-35)/40)*6+(b<75?0:(b-35)/40)+16))"`
+}
+function formatText() {
+	res=''
+	for (( i = 1; i < $#; i += 1 )); do
+		if [[ $@[$i] == 'normal' ]]; then
+			res=$res"$(tput sgr0)"
+		elif [[ $@[$i] == 'bold' ]]; then
+			res=$res"$(tput bold)"
+		elif [[ $@[$i] == 'underline' ]]; then
+			res=$res"$(tput smul)"
+		elif [[ $@[$i] == 'nounderline' ]]; then
+			res=$res"$(tput rmul)"
+		fi
+	done
+
+	res=$res$@[$#]
+
+	endFormatting
+}
+function colorText() {
+	# two required arguments, one optional argument for color
+	# 1. color, bg<optional>: color and background, either hex or tput
+	# 2. the text to color
+
+	res=''
+
+	res=$res$(setColor $1)
+	res=$res${@:2}
+
+	endFormatting
+}
+function setColor() {
+	echo $(tput setaf $1)
+}
+function highlightText() {
+	# two required arguments, one optional argument for color
+	# 1. color, bg<optional>: color and background, either hex or tput
+	# 2. the text to color
+
+	res=''
+
+	res=$res$(setBgColor $1)
+	res=$res${@:2}
+
+	endFormatting
+}
+function setBgColor() {
+	echo $(tput setab $1)
+}
+function endFormatting() {
+	if [[ $(contains $@[$#] $colorEnd) ]] || res=$res$colorEnd
+
+	echo $res
+}
 
 # Normal Colors
 Black='\e[0;30m'        # Black

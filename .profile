@@ -24,7 +24,12 @@ BRANCHPATH=$CWSPATH/$BRANCH/
 #
 #============================================================
 function addkick() {
-	pushd $PWD && mkdir $@/styles && $@/styles && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git && popd
+	if [[ $1 != '' ]]
+	then
+		pushd $PWD && $@/ && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git && popd
+	else
+		pushd $PWD && mkdir $@/styles && $@/styles && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git && popd
+	fi
 }
 function camp() {
     # Usage
@@ -47,9 +52,9 @@ function camp() {
     tm=false	#tag message flag
     f=false		#forced flag
     # Messages / Tag
-    tag=""
-    msg=""		#commit message
-    tmg=""		#tag message
+    tag=''	#tag
+    tmg=''	#tag message
+    msg=''	#commit message
 
     for (( i = 1; i <= $#; i += 1 )); do
         if [[ ${@[$i]} == '-t' ]] then # if tagged
@@ -74,10 +79,19 @@ function camp() {
         fi
     done
 
-    if ( $m ) then
-    else
-        m=true
-        msg=$tmg
+	if ( $t && ! $tm ) {
+		tmg="Updating to ${tag}"
+		tm=true
+	}
+
+    if ( ! $m )
+	then
+		if ( $tm )
+		then
+        	msg=$tmg;
+		else
+			echo "You have to have at least ONE thing to say about what you've done."
+		fi
     fi
 
     # echo '------ tags -------'
@@ -130,7 +144,6 @@ function gwtn() {
     fi
 }
 function gwtr() {
-	branchExists=1
 	local branch=$(git branch |grep \* | cut -d " " -f2)
 
 	if [[ $1 != "" ]] then

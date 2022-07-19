@@ -9,8 +9,8 @@ CWSPATH=~/Jobvite/CWS/
 #-------------------------------------------------------------
 # Load / Edit .profile
 #-------------------------------------------------------------
-alias config='code ~/.profile && echo $(Alert "Editing ~/.profile")'
-alias reload='source ~/.profile && echo $(Success ".profile Reloaded")'
+alias config='code ~/.profile && Alert $cWarning "Editing ~/.profile"'
+alias reload='source ~/.profile && Alert $cSuccess ".profile Reloaded"'
 
 #-------------------------------------------------------------
 #  Global Variables
@@ -24,7 +24,11 @@ BRANCHPATH=$CWSPATH/$BRANCH/
 # Git
 #-------------------------------------------------------------
 function camp() {
-	pushing=true
+    git add .
+    cmp $@
+}
+function cmp() {
+    pushing=true
     # Usage
     #= camp
     #= camp <commit_msg>
@@ -83,7 +87,7 @@ function camp() {
 		then
         	msg=$tmg;
 		else
-			echo $(Message "You have to have at least ONE thing to say about what you've done.")
+			echo $(Error "You have to have at least ONE thing to say about what you've done before you push")
 			return
 		fi
     fi
@@ -100,9 +104,7 @@ function camp() {
     # echo 'msg: ' $msg
     # echo 'branch: ' $branch
 
-    git add .
-
-    git commit -m $msg
+	git commit -m $msg
 
 	if ( $f ) then
 		git push origin $branch -f
@@ -115,20 +117,11 @@ function camp() {
         git push origin --tags
     fi
 
-	if [[ $pushing == true ]] && echo $(Alert "Something went wrong")
+	if [[ $pushing == true ]]; then
+		trap 'echo $(Alert $cError "Something went wrong")' 1 2 3 6
+	fi
 
 	pushing=false
-}
-function cmp() {
-    if [[ $1 != "" ]]; then
-        git commit -m $1
-    else
-        # empty camp sets origin to origin/current_branch
-        git push -u origin $(git symbolic-ref --short HEAD) $2
-        return 1
-    fi
-    git push $2
-    return 1
 }
 function gwtn() {
     if [[ $1 != "" ]]; then
@@ -146,9 +139,9 @@ function gwtn() {
 function gwtm() {
     if [[ $1 != "" ]]; then
         git show-ref --quiet refs/remotes/origin/${1}
-		if [[ $1 == 'starter_branch' ]]
-		then
-			$CWSPATH && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && git push --set-upstream origin ${1}
+        if [[ $1 == 'starter_branch' ]]
+        then
+            $CWSPATH && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && git push --set-upstream origin ${1}
         elif [[ $? == 0 ]] then
             $CWSPATH && git checkout starter_branch && git fetch && git pull && git worktree add --track -B ${1} ./${1} origin/${1} && git checkout root && ${1}/ && mkdir _dev && git push --set-upstream origin ${1}
         else
@@ -159,38 +152,38 @@ function gwtm() {
     fi
 }
 function gwtr() {
-	del=false
-	local branch=$(git branch |grep \* | cut -d " " -f2)
+    del=false
+    local branch=$(git branch |grep \* | cut -d " " -f2)
 
 
-	if [[ $1 == "-d" ]] then
-		del=true
-		if [[ $2 != "" ]] then
-			branch=$2
-		fi
-	elif [[ $1 != "" ]]; then
-		branch=$1
-	elif [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]] then
-		echo $(Message "You can't use gwtr in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr")
-		return 1
+    if [[ $1 == "-d" ]] then
+        del=true
+        if [[ $2 != "" ]] then
+            branch=$2
+        fi
+    elif [[ $1 != "" ]]; then
+        branch=$1
+    elif [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]] then
+        echo $(Message "You can't use gwtr in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr")
+        return 1
     fi
 
-	$CWSPATH/$branch
+    $CWSPATH/$branch
 
-	if [[ $del == true ]] then
-		git show-ref --quiet refs/remotes/origin/$branch
+    if [[ $del == true ]] then
+        git show-ref --quiet refs/remotes/origin/$branch
 
-		if [[ $? == 0 ]] then # if last parameter is specified branch
-			git push origin --delete $branch
-		fi
-	fi
+        if [[ $? == 0 ]] then # if last parameter is specified branch
+            git push origin --delete $branch
+        fi
+    fi
 
-	$CWSPATH
-	git worktree remove $branch
+    $CWSPATH
+    git worktree remove $branch
 
-	if [[ $del == true ]] then
-		git branch -D $branch
-	fi
+    if [[ $del == true ]] then
+        git branch -D $branch
+    fi
 }
 function mpeek() {
     git log master.. --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}
@@ -200,14 +193,18 @@ function addkick() {
 	then
 		if [ -d $@/styles/ ]; then
 			echo $(Warning "Kickoff already exists at $@/styles")
+			return
 		else
 			pushd $PWD && $@/ && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git && popd
+			return
 		fi
 	else
 		if [ -d styles/ ]; then
 			echo $(Warning "Kickoff already exists at /styles")
+			return
 		else
 			pushd $PWD && sudo mkdir $@/styles && $@/styles && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git && popd
+			return
 		fi
 	fi
 }
@@ -218,54 +215,54 @@ function new() {
     if [ -d styles/ ] || addkick
 }
 function start() {
-	run=true
-	# Directory containing package.json
-	dir=''
+    run=true
+    # Directory containing package.json
+    dir=''
 
-	if [ -f package.json ]
-	then
-		dir=$(dirname 'package.json')
-	fi
+    if [ -f package.json ]
+    then
+        dir=$(dirname 'package.json')
+    fi
 
-	for (( i=1; i <= 3; i++ ))
-	do
-		for SDIR in `fn ${1=.} 'package.json' $i`
-		do
-			dir=$(dirname $SDIR)
-		done
-		[[ $dir != '' ]] && break
-	done
+    for (( i=1; i <= 3; i++ ))
+    do
+        for SDIR in `fn ${1=.} 'package.json' $i`
+        do
+            dir=$(dirname $SDIR)
+        done
+        [[ $dir != '' ]] && break
+    done
 
-	if [[ $dir != '' ]]
-	then
-		# Catch for exiting on ctrl+c for exit message and returning from packaged dir
-		home=$PWD
-		if [[ $run == true ]]; then
-			trap 'echo && echo $(colorText $cMessage "...Kickoff Stopped") && $home' 1 2 3 6
-		fi
+    if [[ $dir != '' ]]
+    then
+        # Catch for exiting on ctrl+c for exit message and returning from packaged dir
+        home=$PWD
+        if [[ $run == true ]]; then
+            trap 'echo && echo $(colorText $cMessage "...Kickoff Stopped") && $home' 1 2 3 6
+        fi
 
-		# cd to dir containing package.json
-		$dir
+        # cd to dir containing package.json
+        $dir
 
-		# Start message
-		echo $(colorText $cSuccess 'Starting Kickoff in '"$(formatText 'bold' $dir)")
-		echo
-		echo $(formatText 'bold' "$(colorText $cMessage 'To stop, press Control-C')")
+        # Start message
+        echo $(colorText $cSuccess 'Starting Kickoff in '"$(formatText 'bold' $dir)")
+        echo
+        echo $(formatText 'bold' "$(colorText $cMessage 'To stop, press Control-C')")
 
-		# update npm, install package.json, npm audit fit, then gulp
-		ncu -u && npm install && npm audit fix && gulp
-	else
-		echo $(formatText 'bold' "$(colorText $cWarning '! There is no Kickoff found in '$PWD/$1 '!')")
-		echo '\ncd into the correct directory,\nuse command\n'
-		echo $(formatText 'bold' "$(colorText $cMessage ' > addkick')")
-		echo '\nto add a new Kickoff to your project,\nor specify in which folder, not including, your Kickoff exists by doing:\n'
-		echo $(formatText 'bold' "$(colorText $cMessage ' > start path/to')")
-		echo
-		echo $(formatText 'bold' underline 'Hold up! Wait a minute. Make sure you read ^this^ before you move on.')
-		echo
-	fi
+        # update npm, install package.json, npm audit fit, then gulp
+        ncu -u && npm install && npm audit fix && gulp
+    else
+        echo $(formatText 'bold' "$(colorText $cWarning '! There is no Kickoff found in '$PWD/$1 '!')")
+        echo '\ncd into the correct directory,\nuse command\n'
+        echo $(formatText 'bold' "$(colorText $cMessage ' > addkick')")
+        echo '\nto add a new Kickoff to your project,\nor specify in which folder, not including, your Kickoff exists by doing:\n'
+        echo $(formatText 'bold' "$(colorText $cMessage ' > start path/to')")
+        echo
+        echo $(formatText 'bold' underline 'Hold up! Wait a minute. Make sure you read ^this^ before you move on.')
+        echo
+    fi
 
-	run=false
+    run=false
 }
 function stats() {
     git log --stat --all --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-50}
@@ -425,84 +422,106 @@ cError=$Red
 cMessage=$Blue
 cEnd=$(tput sgr0)
 
+ALERTWIDTH=30 #Columns for alert width
+
 #- Coloring Functions
 function Alert() {
-	echo $(formatText 'bold' "$(highlightText $cWarning $1)")
+    color=$cWarning;
+    space=''
+    str=''
+    if [[ $2 != "" ]]; then
+        color=$1
+        str=$2
+    else
+        str=$1
+    fi
+
+    for (( i = 1; i <= ($ALERTWIDTH-${#str}) / 2; i += 1 )); do
+        space=$space"-"
+    done
+
+    str="$space $str $space"
+
+    echo -e "$(Highlight $color $str)"
 }
 function Success() {
-	echo $(formatText 'bold' "$(colorText $cSuccess $1)")
+    echo -e $(formatText 'bold' "$(colorText $cSuccess $1)")
 }
 function Warning() {
-	echo $(formatText 'bold' "$(colorText $cWarning $1)")
+    echo -e $(formatText 'bold' "$(colorText $cWarning $1)")
 }
 function Error() {
-	echo $(formatText 'bold' "$(colorText $cError $1)")
+    echo -e $(formatText 'bold' "$(colorText $cError $1)")
 }
 function Message() {
-	echo $(formatText 'bold' "$(colorText $cMessage $1)")
+    echo -e $(formatText 'bold' "$(colorText $cMessage $1)")
+}
+function Highlight() {
+    # $1: highlight color <required>
+    # $2: text content <required>
+    echo -e $(formatText 'bold' "$(highlightText $1 $2)")
 }
 
 #- Formatting Functions
 function formatText() {
-	res=''
-	for (( i = 1; i < $#; i += 1 )); do
-		if [[ $@[$i] == 'normal' ]]; then
-			res=$res"$(tput sgr0)"
-		elif [[ $@[$i] == 'bold' ]]; then
-			res=$res"$(tput bold)"
-		elif [[ $@[$i] == 'underline' ]]; then
-			res=$res"$(tput smul)"
-		elif [[ $@[$i] == 'nounderline' ]]; then
-			res=$res"$(tput rmul)"
-		fi
-	done
+    res=''
+    for (( i = 1; i < $#; i += 1 )); do
+        if [[ $@[$i] == 'normal' ]]; then
+            res=$res"$(tput sgr0)"
+        elif [[ $@[$i] == 'bold' ]]; then
+            res=$res"$(tput bold)"
+        elif [[ $@[$i] == 'underline' ]]; then
+            res=$res"$(tput smul)"
+        elif [[ $@[$i] == 'nounderline' ]]; then
+            res=$res"$(tput rmul)"
+        fi
+    done
 
-	res=$res$@[$#]
+    res=$res$@[$#]
 
-	endFormatting
+    endFormatting
 }
 function colorText() {
-	# two required arguments, one optional argument for color
-	# 1. color, bg<optional>: color and background, either hex or tput
-	# 2. the text to color
+    # two required arguments, one optional argument for color
+    # $1: text color <required>
+    # $2: text content <required>
 
-	res=''
+    res=''
 
-	res=$res$(tput setaf $(fromHex $1))
-	res=$res${@:2}
+    res=$res$(tput setaf $(fromHex $1))
+    res=$res${@:2}
 
-	endFormatting
+    endFormatting
 }
 function highlightText() {
-	# two required arguments, one optional argument for color
-	# 1. color, bg<optional>: color and background, either hex or tput
-	# 2. the text to color
+    # $1: highlight color <required>
+    # $2: text content <required>
 
-	res=''
+    res=''
 
-	res=$res$(tput setab $(fromHex $1))
-	res=$res' '${@:2}' '
+    res=$res$(tput setab $(fromHex $1))
+    res=$res' '${@:2}' '
 
-	endFormatting
+    endFormatting
 }
 function fromHex() {
-	# fromHex: https://gist.github.com/mhulse/b11e568260fb8c3aa2a8
-	hex=$1
-	if [[ $hex == "#"* ]]; then
-		isHex=true
-		hex=$(echo $1 | awk '{print substr($0,2)}')
-	fi
-	r=$(printf '0x%0.2s' "$hex")
-	g=$(printf '0x%0.2s' ${hex#??})
-	b=$(printf '0x%0.2s' ${hex#????})
-	rgb=$(((r<75?0:(r-35)/40)*6*6+(g<75?0:(g-35)/40)*6+(b<75?0:(b-35)/40)+16))
+    # fromHex: https://gist.github.com/mhulse/b11e568260fb8c3aa2a8
+    hex=$1
+    if [[ $hex == "#"* ]]; then
+        isHex=true
+        hex=$(echo $1 | awk '{print substr($0,2)}')
+    fi
+    r=$(printf '0x%0.2s' "$hex")
+    g=$(printf '0x%0.2s' ${hex#??})
+    b=$(printf '0x%0.2s' ${hex#????})
+    rgb=$(((r<75?0:(r-35)/40)*6*6+(g<75?0:(g-35)/40)*6+(b<75?0:(b-35)/40)+16))
 
-	echo ${rgb:0}
+    echo -e ${rgb:0}
 }
 function endFormatting() {
-	if [[ $(contains $@[$#] $cEnd) ]] || res=$res$cEnd
+    if [[ $(contains $@[$#] $cEnd) ]] || res=$res$cEnd
 
-	echo $res
+    echo -e $res
 }
 
 #-------------------------------------------------------------
@@ -571,32 +590,32 @@ alias kk='ll'
 # Find Helpers
 #-------------------------------------------------------------
 function fn() {
-	if [[ $3 != "" ]]
-	then
-		find $1 -name "$2" -prune -maxdepth $3
-	elif [[ $2 != "" ]]
-	then
-		find $1 -name "$2" -prune -maxdepth 1
-	elif [[ $1 != "" ]]
-	then
-		find . -name "$1" -prune -maxdepth 1
-	else
-		echo 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
-	fi
+    if [[ $3 != "" ]]
+    then
+        find $1 -name "$2" -prune -maxdepth $3
+    elif [[ $2 != "" ]]
+    then
+        find $1 -name "$2" -prune -maxdepth 1
+    elif [[ $1 != "" ]]
+    then
+        find . -name "$1" -prune -maxdepth 1
+    else
+        echo 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
+    fi
 }
 function fnd() {
-	if [[ $3 != "" ]]
-	then
-		find $1 -name "$2" -type d -prune -maxdepth $3
-	elif [[ $2 != "" ]]
-	then
-		find $1 -name "$2" -type d -prune -maxdepth 1
-	elif [[ $1 != "" ]]
-	then
-		find . -name "$1" -type d -prune -maxdepth 1
-	else
-		echo 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
-	fi
+    if [[ $3 != "" ]]
+    then
+        find $1 -name "$2" -type d -prune -maxdepth $3
+    elif [[ $2 != "" ]]
+    then
+        find $1 -name "$2" -type d -prune -maxdepth 1
+    elif [[ $1 != "" ]]
+    then
+        find . -name "$1" -type d -prune -maxdepth 1
+    else
+        echo 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
+    fi
 }
 function contains() { case "$1" in *"$2"*) true ;; *) false ;; esac }
 #-------------------------------------------------------------

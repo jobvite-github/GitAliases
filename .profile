@@ -1,26 +1,36 @@
 #============================================================
 #= Config Values
-#= SET THESE VALUES TO ENSURE YOUR ALIASES WORK CORRECTLY
+#
+# IMPORTANT!!
+#
+# SET THESE VALUES TO ENSURE YOUR ALIASES WORK CORRECTLY
+#============================================================
+CWSPATH=~/Jobvite/CWS/ # Set your CWSPATH variable to your CWS folder's path.
+
+# FZ Stuff
+#-------------------------------------------------------------
+FZUSER=''    # FileZilla Username
+FZPWD=''    # FileZilla Password
+
+# End Config
 #============================================================
 
-# Set your CWSPATH variable to your CWS folder's path.
-CWSPATH=~/Jobvite/CWS/
 
-#-------------------------------------------------------------
+#============================================================
+#= Aliases / Functions
+#============================================================
+
 # Load / Edit .profile
 #-------------------------------------------------------------
 alias config='code ~/.profile && Alert $cWarning "Editing ~/.profile"'
 alias reload='source ~/.profile && Alert $cSuccess ".profile Reloaded"'
 
-#-------------------------------------------------------------
-#  Global Variables
-#	Variables for the current branch, and its path.
+# Global Variables
+# - Variables for the current branch, and its path.
 #-------------------------------------------------------------
 BRANCH=$(git branch |grep \* | cut -d " " -f2)
 BRANCHPATH=$CWSPATH/$BRANCH/
-#-------------------------------------------------------------
 
-#-------------------------------------------------------------
 # Git
 #-------------------------------------------------------------
 function camp() {
@@ -28,7 +38,7 @@ function camp() {
     cmp $@
 }
 function cmp() {
-    pushing=true
+	pushing=false
     # Usage
     #= camp
     #= camp <commit_msg>
@@ -86,6 +96,7 @@ function cmp() {
 		if ( $tm )
 		then
         	msg=$tmg;
+			pushing=true
 		else
 			echo $(Error "You have to have at least ONE thing to say about what you've done before you push")
 			return
@@ -103,6 +114,7 @@ function cmp() {
     # echo 'tmg: ' $tmg
     # echo 'msg: ' $msg
     # echo 'branch: ' $branch
+    # echo 'pushing: ' $pushing
 
 	git commit -m $msg
 
@@ -297,26 +309,6 @@ alias cam='git add . && git commit -m'
 alias ch='git checkout'
 alias chd='git checkout develop'
 alias chma='git checkout master'
-# function chpm() {
-# 	#!/bin/bash
-# 	# Reset Permissions Script
-# 	# resetpermission
-
-# 	FTPUSER=brettbyron
-
-# 	echo -e 'Please enter the directory to go to:' $1
-# 	if [[ $1 == "" ]]
-# 	then
-# 		read $(git symbolic-ref --short HEAD)
-# 	else
-# 		read DIR
-# 	fi
-# 	echo -e 'Please enter the folder to update permissions:' $2
-# 	read FOLDER
-# 	sftp $FTPUSER@sftp.jobvite.com:/uploads/$1 <<EOF
-# 	chmod 777 -R $2
-
-# }
 alias chr='git checkout root'
 alias chs='git checkout sandbox'
 alias chsb='git checkout starter_branch'
@@ -361,25 +353,36 @@ alias stash='git add . && git stash'
 alias stashed='git stash show'
 alias whichup=whichupstream='git branch -vv'
 
+#-------------------------------------------------------------
 # SFTP / FileZilla
 #-------------------------------------------------------------
+function chpm() {
+	# Reset Permissions Script
+	echo 'Please enter the folder to update permissions:'
+	read FOLDER
+	Message "Updating permissions of $BRANCH/$FOLDER"
+	colorText $cSuccess "Your FZ password is copied, paste it now."
+	echo "chmod 777 $FOLDER" | fz >/dev/null
+}
 function fz() {
     if [[ $1 != "" ]]; then
         echo $@
-        echo $FZPWD | pbcopy && sftp $FZUSER@sftp.jobvite.com:/uploads/${1}
+        echo $FZPWD | pbcopy && sftp $FZUSER@sftp.jobvite.com:/uploads/$1
     else
-        echo $FZPWD | pbcopy && sftp $FZUSER@sftp.jobvite.com:/uploads/$(git symbolic-ref --short HEAD)
+        echo $FZPWD | pbcopy && sftp $FZUSER@sftp.jobvite.com:/uploads/$BRANCH
     fi
 }
-alias fzu="echo $FZPWD | pbcopy && sftp $FZUSER@sftp.jobvite.com:/uploads/"
-alias fzr="echo $FZPWD | pbcopy && sftp $FZUSER@sftp.jobvite.com:/uploads/$(git remote -v | head -n1 | awk '{print $2}' | sed 's/.*\///' | sed 's/\.git//')"
+alias fzu="echo $FZPWD | pbcopy | sftp $FZUSER@sftp.jobvite.com:/uploads/"
+alias fzr="echo $FZPWD | pbcopy | sftp $FZUSER@sftp.jobvite.com:/uploads/$(git remote -v | head -n1 | awk '{print $2}' | sed 's/.*\///' | sed 's/\.git//')"
 
+#-------------------------------------------------------------
 # NPM
 #-------------------------------------------------------------
 alias naf='npm audit fix'
 alias ncui='ncu -u && npm install'
 alias ncuif='ncu -u && npm install && npm audit fix'
 
+#-------------------------------------------------------------
 # Heroku
 #-------------------------------------------------------------
 alias apps='heroku list'
@@ -388,6 +391,7 @@ alias hl='heroku logs --tail'
 alias hp='git push heroku master'
 alias hpt='git push heroku --tags'
 
+#-------------------------------------------------------------
 # Build
 #-------------------------------------------------------------
 alias watch='build --deploy --watch'
@@ -395,15 +399,18 @@ alias deploy='build --deploy'
 alias assets='build --deploy -task --assets'
 alias djs='build --deploy -task --js'
 
+#-------------------------------------------------------------
 # Zip Password
 #-------------------------------------------------------------
 alias zipit='zip -er $1.zip $2'
 
-#-------------------------------------------------------------
-#
-#= tput Text Formatting
-#
-#-------------------------------------------------------------
+# End Aliases / Functions
+#============================================================
+
+
+#============================================================
+# tput Text Formatting
+#============================================================
 
 #- Colors
 Black='#000000'
@@ -524,11 +531,12 @@ function endFormatting() {
     echo -e $res
 }
 
-#-------------------------------------------------------------
+# End tput Text Formatting
+#============================================================
 
 #-------------------------------------------------------------
 #
-#  ALIASES AND FUNCTIONS
+#  Other aliases and functions
 #
 #  Arguably, some functions defined here are quite big.
 #  If you want to make this file smaller, these functions can

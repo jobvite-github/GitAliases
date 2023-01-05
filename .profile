@@ -8,7 +8,7 @@
 #
 # SET THESE VALUES TO ENSURE YOUR ALIASES WORK CORRECTLY
 #============================================================
-TLPATH=~/Employ/Talemetry/ # Set your TLPATH variable to your Talemetry folder's path.
+TLPATH='' # Set your TLPATH variable to your Talemetry folder's path.
 JVPATH=~/Jobvite/CWS/ # Set your JVPATH variable to your Jobvite CWS folder's path.
 #============================================================
 

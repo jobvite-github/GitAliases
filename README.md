@@ -31,6 +31,8 @@ If your CWS folder is in your User Directory, for example, you would change `JVP
     This is the same function as `addKick`, just with some extra functionality for potential future use cases.
 <br>
 
+</details>
+
 <h3><b>Formatting / Animations</b></h3>
 
 <details id="formattingUpdate010523">

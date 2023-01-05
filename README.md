@@ -8,20 +8,38 @@ Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on whi
 source ~/.profile
 ```
 
-## Update (June 29 2022)
-
+## Updating your aliases
 In your terminal, run:
 
 ```sh
 config
 ```
 
-to open up your `.profile`, and replace what you have with the code in this repo.
+to open up your `.profile`, and replace what you have with the code in the `.profile` in this repo.
 
+After you put the latest code in your `.profile`, make sure you update the `JVPATH` variable to reflect the path to your CWS folder.
 
-After you put the latest code in your `.profile`, make sure you update the `CWSPATH` variable to reflect the path to your CWS folder. My folder is in my ~ (User Directory) -> Jobvite -> CWS.
+If your CWS folder is in your User Directory, for example, you would change `JVPATH` from `~/Jobvite/CWS` to `~/CWS`.
 
-If your CWS folder is in your User Directory, for example, you would change `CWSPATH` from `~/Jobvite/CWS` to `~/CWS`. Prior to the latest updates, you had to replace the `~/Jobvite/CWS/` in multiple places.
+## Update (Jan 5 2023)
+
+<h3><b>Functions</b></h3>
+
+<details id="addStyles">
+    <summary><code>addStyles()</code></summary>
+
+    This is the same function as `addKick`, just with some extra functionality for potential future use cases.
+<br>
+
+<h3><b>Formatting / Animations</b></h3>
+
+<details id="formattingUpdate010523">
+    You'll notice fancy new loading animations during long processes, and updated message formatting.
+</details>
+
+Check the diff of the latest commit to see all changes.
+
+## Update (June 29 2022)
 
 <h3><b>Functions</b></h3>
 

@@ -20,7 +20,22 @@ FZPWD=''    # FileZilla Password
 #-------------------------------------------------------------
 alias config='code ~/.profile && echo $(Alert $cWarning "Editing ~/.profile ")'
 alias reload='source ~/.profile && echo $(Alert $cSuccess ".profile Reloaded ")'
-alias updateAliases='curl -s https://raw.githubusercontent.com/brettwbyron/GitAliases/main/.profile > ~/.profile'
+function updateAliases() {
+    read res"?$(Color -m 'This will overwrite your .profile. Are you sure you want to continue? [y/n]'$cEnd -ub): "
+    case $res in
+        [yY])
+            (
+                (
+                    curl -s https://raw.githubusercontent.com/brettwbyron/GitAliases/main/.profile > ~/.profile && reload
+                ) &
+                loadingAnimation $! "Updating .profile"
+            )
+        ;;
+        *)
+            return
+        ;;
+    esac
+}
 
 #============================================================
 #= Global Variables
@@ -28,6 +43,7 @@ alias updateAliases='curl -s https://raw.githubusercontent.com/brettwbyron/GitAl
 GIT_HEAD=$(git symbolic-ref --short HEAD) &>/dev/null
 
 ENV=''
+ENVTYPE=''
 function setEnv() {
     findEnv
     ENV=${1:-$envPath}
@@ -43,8 +59,10 @@ function findEnv() {
 
     if [[ $result == 'jobvite' || $result == 'cws' ]]; then
         envPath=$JVPATH
+        ENVTYPE='jv'
     elif [[ $result == "talemetry" ]]; then
         envPath=$TLPATH
+        ENVTYPE='tl'
     elif [[ $step ]] && [[ $step > 5 ]]; then
         Color $cWarning 'Cannot find CWS, Jobvite or Talemetry environment. Make sure you are in a folder named CWS, Jobvite, or Talemetry.'$cEnd
 
@@ -58,8 +76,8 @@ function findEnv() {
             envPath=$TLPATH
             ;;
             *)
-            echo >&2 "I will pass on setting an environment"
-            envPath=$PWD
+            echo >&2 $(Message "No environment set$cEnd")
+            envPath=$PWD/
             ;;
         esac
     else
@@ -70,7 +88,6 @@ function findEnv() {
 
     step=0
 }
-setEnv
 
 #============================================================
 #= Aliases / Functions
@@ -80,13 +97,17 @@ setEnv
 #-------------------------------------------------------------
 function camp() {
     setEnv
-    $ENV$(git branch |grep \* | cut -d " " -f2)
+    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+        $ENV$(git branch |grep \* | cut -d " " -f2)
+    fi
     git add .
     gitPush $@
 }
 function cmp() {
     setEnv
-    $ENV$(git branch |grep \* | cut -d " " -f2)
+    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+        $ENV$(git branch |grep \* | cut -d " " -f2)
+    fi
     gitPush $@
 }
 function gitPush() {
@@ -298,6 +319,7 @@ function gwtm() {
 function gwtr() {
     trap 'echo && echo $(Alert $cWarning "Stopped removing worktree \"$branch\"\nCheck on what has been deleted") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
 
+    setEnv
     del=false
     local branch=$(git symbolic-ref --short HEAD)
 
@@ -444,7 +466,7 @@ function newTL() {
     if [ -d layouts/ ] || mkdir layouts && touch layouts/.gitkeep
     if [ -d script/ ] || mkdir script && touch script/.gitkeep
     if [ -d templates/ ] || mkdir templates && touch templates/.gitkeep
-    if [ -d styles/ ] || addtail
+    if [ -d styles/ ] || addStyles
 }
 function addStyles() {
     pushd $PWD 1>/dev/null
@@ -512,6 +534,8 @@ function mvCWS() {
     fi
 }
 function repairWorktrees() {
+    setEnv
+
     local repairNeeded=false
 
     ${1:-$ENV}
@@ -560,6 +584,8 @@ function repairWorktrees() {
 }
 
 function repairWorktree() {
+    setEnv
+
     local ref=''
     local repairNeeded=false
 

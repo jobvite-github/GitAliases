@@ -50,7 +50,7 @@ function findEnv() {
 
         local envRes=''
 
-        read envRes"?Type in the environment you want to use $(Color -m 'jv'$cEnd -ub)(jobvite)/$(Color -m 'tl'$cEnd -ub)(talemetry): "
+        read envRes"?Type in the environment you want to use $(Color -m 'jv'$cEnd -ub)(jobvite)/$(Color -m 'tl'$cEnd -ub)(talemetry) $(Color -m 'Press other key to skip'$cEnd -ub): "
         case $envRes in [jJ][vV]|[jJ][oO][bB][vV][iI][tT][eE]|[cC][wW][sS])
             envPath=$JVPATH
             ;;
@@ -58,7 +58,7 @@ function findEnv() {
             envPath=$TLPATH
             ;;
             *)
-            echo >&2 "Sorry. I do not understand $REPLY. I will pass on setting an environment"
+            echo >&2 "I will pass on setting an environment"
             envPath=$PWD
             ;;
         esac

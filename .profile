@@ -1,16 +1,26 @@
 #============================================================
 #= Config Values
-#============================================================
-
-#============================================================
-# IMPORTANT!!
-# vvvvvvvvvvv
 #
-# SET THESE VALUES TO ENSURE YOUR ALIASES WORK CORRECTLY
+# !!IMPORTANT!!
+# Set these values to ensure your aliases work correctly
+#
 #============================================================
 TLPATH='' # Set your TLPATH variable to your Talemetry folder's path.
 JVPATH=~/Jobvite/CWS/ # Set your JVPATH variable to your Jobvite CWS folder's path.
+
+# FZ Stuff
+#-------------------------------------------------------------
+FZUSER=''    # FileZilla Username
+FZPWD=''    # FileZilla Password
+
+# End Config
 #============================================================
+
+# Load / Edit / Update .profile
+#-------------------------------------------------------------
+alias config='code ~/.profile && echo $(Alert $cWarning "Editing ~/.profile ")'
+alias reload='source ~/.profile && echo $(Alert $cSuccess ".profile Reloaded ")'
+alias updateAliases='curl -s https://raw.githubusercontent.com/brettwbyron/GitAliases/main/.profile > ~/.profile'
 
 #============================================================
 #= Global Variables
@@ -61,20 +71,6 @@ function findEnv() {
     step=0
 }
 setEnv
-
-# FZ Stuff
-#-------------------------------------------------------------
-FZUSER=''    # FileZilla Username
-FZPWD=''    # FileZilla Password
-
-# Load / Edit .profile
-#-------------------------------------------------------------
-alias config='code ~/.profile && echo $(Alert $cWarning "Editing ~/.profile ")'
-alias reload='source ~/.profile && echo $(Alert $cSuccess ".profile Reloaded ")'
-
-# End Config
-#============================================================
-
 
 #============================================================
 #= Aliases / Functions

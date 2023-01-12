@@ -30,6 +30,7 @@ function updateAliases() {
                 ) &
                 loadingAnimation $! "Updating .profile"
             )
+            config
         ;;
         *)
             return

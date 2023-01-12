@@ -44,10 +44,6 @@ GIT_HEAD=$(git symbolic-ref --short HEAD) &>/dev/null
 
 ENV=''
 ENVTYPE=''
-function setEnv() {
-    findEnv
-    ENV=${1:-$envPath}
-}
 function findEnv() {
     dir=${1-$PWD}
     step=${2-0}
@@ -55,31 +51,15 @@ function findEnv() {
     result="${result##*/}"                  # remove everything before the last /
     result=${result:-/}
     result=`echo "$result" | tr 'A-Z' 'a-z'`
-    envPath=''
 
     if [[ $result == 'jobvite' || $result == 'cws' ]]; then
-        envPath=$JVPATH
+        ENV=$JVPATH
         ENVTYPE='jv'
     elif [[ $result == "talemetry" ]]; then
-        envPath=$TLPATH
+        ENV=$TLPATH
         ENVTYPE='tl'
-    elif [[ $step ]] && [[ $step > 5 ]]; then
-        Color $cWarning 'Cannot find CWS, Jobvite or Talemetry environment. Make sure you are in a folder named CWS, Jobvite, or Talemetry.'$cEnd
-
-        local envRes=''
-
-        read envRes"?Type in the environment you want to use $(Color -m 'jv'$cEnd -ub)(jobvite)/$(Color -m 'tl'$cEnd -ub)(talemetry) $(Color -m 'Press other key to skip'$cEnd -ub): "
-        case $envRes in [jJ][vV]|[jJ][oO][bB][vV][iI][tT][eE]|[cC][wW][sS])
-            envPath=$JVPATH
-            ;;
-            [tT][lL]|[tT][aA][lL][eE][mM][eE][tT][rR][yY])
-            envPath=$TLPATH
-            ;;
-            *)
-            echo >&2 $(Message "No environment set$cEnd")
-            envPath=$PWD/
-            ;;
-        esac
+    elif [ $step -ge 0 ] && [[ $step > 5 ]]; then
+        ENV=$PWD/
     else
         ((step++))
         findEnv $(dirname $dir) $step
@@ -96,22 +76,13 @@ function findEnv() {
 # Git
 #-------------------------------------------------------------
 function camp() {
-    setEnv
-    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-        $ENV$(git branch |grep \* | cut -d " " -f2)
-    fi
     git add .
     gitPush $@
 }
 function cmp() {
-    setEnv
-    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-        $ENV$(git branch |grep \* | cut -d " " -f2)
-    fi
     gitPush $@
 }
 function gitPush() {
-
     # Usage
     #= gitPush
     #= gitPush <commit_msg>
@@ -190,9 +161,14 @@ function gitPush() {
     # echo 'msg: ' $msg
     # echo 'branch: ' $branch
 
-    (
-        (
-            (
+    findEnv
+    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+        cd $ENV$(git branch |grep \* | cut -d " " -f2)
+    fi
+
+    # (
+    #     (
+    #         (
                 git commit -m $msg &>/dev/null
 
                 if ( $f ) then
@@ -206,17 +182,82 @@ function gitPush() {
                     git push origin --tags 2>/dev/null
                 fi
 
-            )
-        ) &
-        loadingAnimation $! "Pushing to origin/$branch"
-    )
+    #         )
+    #     ) &
+    #     loadingAnimation $! "Pushing to origin/$branch"
+    # )
 }
 
 function gwtn() {
-    setEnv
     branch=$1
 
-    $ENV
+    if [[ $branch != "" ]]; then
+
+        [ -d $ENV$branch ] && return
+
+        findEnv
+        if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+            cd $ENV &>/dev/null
+        fi
+
+        trap 'echo && echo $(Alert $cWarning "Stopped creating worktree \"$branch\"\nCheck on what has been created so far") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
+
+        (
+            (
+                [[ $branch != 'starter_branch' ]] && git checkout starter_branch  &>/dev/null
+
+                git fetch  &>/dev/null
+                git pull  &>/dev/null
+
+                git show-ref --quiet refs/remotes/origin/$branch
+                if [[ $? == 0 ]]; then
+                    git worktree add --track -B $branch ./$branch origin/$branch  &>/dev/null
+                else
+                    git worktree add $branch  &>/dev/null
+                fi
+
+                git checkout root  &>/dev/null
+
+                cd $branch/
+
+                mkdir _dev
+            ) &
+            loadingAnimation $! "Setting up worktree \"$branch\""
+        )
+
+        cd $ENV$branch &>/dev/null
+
+        (
+            (
+                if [[ $? == 0 ]]; then
+                    git push origin $branch &>/dev/null
+                else
+                    git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git"  &>/dev/null
+                    git push --set-upstream origin $(git symbolic-ref --short HEAD)  &>/dev/null
+                fi
+            ) &
+            loadingAnimation $! "Setting up in GitHub"
+        )
+
+        start -i
+
+        Alert $cSuccess "\"$branch\" created!\nOpening in VSCode"
+
+        code .
+    else
+        Error "Need a worktree name ( e.x. gwtn myworktree )"
+        return
+    fi
+
+    cd $ENV &>/dev/null
+}
+function gwtm() {
+    branch=$1
+
+    findEnv
+    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+        $ENV
+    fi
     if [[ $branch != "" ]]; then
 
         [ -d $ENV$branch ] && return
@@ -225,110 +266,53 @@ function gwtn() {
 
         (
             (
-                (
-                    [[ $branch != 'starter_branch' ]] && git checkout starter_branch &>/dev/null
+                [[ $branch != 'starter_branch' ]] && git checkout starter_branch  &>/dev/null
 
-                    git fetch &>/dev/null
-                    git pull &>/dev/null
-
-                    git show-ref --quiet refs/remotes/origin/$branch
-                    if [[ $? == 0 ]]; then
-                        git worktree add --track -B $branch ./$branch origin/$branch 1>/dev/null
-                    else
-                        git worktree add $branch 1>/dev/null
-                    fi
-
-                    git checkout root &>/dev/null
-                    $ENV$branch
-
-                    [[ $? != 0 ]] && git commit -am "Setting up $branch" && git push --set-upstream origin $branch 2>/dev/null
-
-
-                    mkdir _dev
-                ) &
-                loadingAnimation $! "Setting up worktree \"$branch\""
-            )
-        )
-
-        $ENV$branch
-
-        (
-            (
-                if [[ $? == 0 ]]; then
-                    git push origin $branch 2>/dev/null
-                else
-                    git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" &>/dev/null
-                    git push --set-upstream origin $(git symbolic-ref --short HEAD) 2>/dev/null
-                fi
-            ) &
-            loadingAnimation $! "Setting up in GitHub"
-        )
-
-        Alert $cSuccess "\"$branch\" created!\nOpening in VSCode"
-
-        code .
-    else
-        Message "Add a worktree name ( e.x. gwtn myworktree )"
-        return
-    fi
-
-    -
-}
-function gwtm() {
-    setEnv
-    $ENV
-    local branch=$1
-    if [[ $branch != "" ]]; then
-        [ -d $ENV$branch ] && return
-
-        trap 'echo && echo $(Alert $cWarning "Stopped making worktree \"$branch\"\nCheck on what has been made so far") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
-
-        (
-            (
-                [[ $branch != 'starter_branch' ]] && git checkout starter_branch &>/dev/null
-
-                git fetch &>/dev/null
-                git pull &>/dev/null
+                git fetch  &>/dev/null
+                git pull  &>/dev/null
 
                 git show-ref --quiet refs/remotes/origin/$branch
                 if [[ $? == 0 ]]; then
-                    git worktree add --track -B $branch ./$branch origin/$branch 1>/dev/null
+                    git worktree add --track -B $branch ./$branch origin/$branch  &>/dev/null
                 else
-                    git worktree add $branch 1>/dev/null
+                    git worktree add $branch  &>/dev/null
                 fi
 
-                git checkout root &>/dev/null
+                git checkout root  &>/dev/null
                 $branch/
-
-                [[ $? != 0 ]] && git commit -am "Setting up $branch" && git push --set-upstream origin $branch 2>/dev/null
-
 
                 mkdir _dev
             ) &
             loadingAnimation $! "Setting up worktree \"$branch\""
         )
+
+        $ENV$branch &>/dev/null
+
+        (
+            (
+                if [[ $? == 0 ]]; then
+                    git push origin $branch  &>/dev/null
+                else
+                    git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git"  &>/dev/null
+                    git push --set-upstream origin $(git symbolic-ref --short HEAD)  &>/dev/null
+                fi
+            ) &
+            loadingAnimation $! "Setting up in GitHub"
+        )
+
+        Alert $cSuccess "\"$branch\" created!"
     else
-        Message "Add a worktree name ( e.x. gwtm myworktree )"
+        Error "Need a worktree name ( e.x. gwtn myworktree )"
         return
     fi
 
-    Alert $cSuccess "\"$branch\" created!"
-
-    $ENV
+    - &>/dev/null
 }
 function gwtr() {
+    branch=${1:$(git symbolic-ref --short HEAD)}
     trap 'echo && echo $(Alert $cWarning "Stopped removing worktree \"$branch\"\nCheck on what has been deleted") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
 
-    setEnv
-    del=false
-    local branch=$(git symbolic-ref --short HEAD)
-
-    if [[ $1 == "-d" ]]; then
-        del=true
-        if [[ $2 != "" ]]; then
-            branch=$2
-        fi
-    elif [[ $1 != "" ]]; then
+    if [[ $1 != "" ]]; then
         branch=$1
     elif [[ $1 == "" ]]; then
         branch=$(git symbolic-ref --short HEAD)
@@ -337,46 +321,19 @@ function gwtr() {
         return
     fi
 
-    if [[ $del == true ]]; then
-        read 'Are you sure you want to use -d to delete the branch? This cannot be undone (y/n) ' REPLY
-
-        case $REPLY in
-            [yY][eE][sS]|[yY])
-                echo
-                echo 'Okay. Will do!'
-                (
-                    git show-ref --quiet refs/remotes/origin/$branch
-
-                    if [[ $? == 0 ]]; then # if last parameter is specified branch
-                        git push origin --delete $branch 2>/dev/null
-                    fi
-                )
-            ;;
-            [nN][oO]|[nN]|''|*)
-                echo
-                echo 'Okay. I will pass on that for now.'
-                return
-            ;;
-        esac
+    findEnv
+    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+        cd $ENV &>/dev/null
     fi
 
     (
         (
-            $ENV
-
             git worktree remove $branch 2>/dev/null
-
-            if [[ $del == true ]]; then
-                git branch -D $branch 2>/dev/null
-            fi
         ) &
         loadingAnimation $! "Removing worktree \"$branch\""
     )
 
     Success "$branch has been removed."
-    trap - 1 2 3 6
-
-    $ENV
     # git worktree prune
 }
 function tagging() {
@@ -410,11 +367,26 @@ function findPackageJSON() {
     done
 }
 function start() {
-    dir=''
+    # Usage: Start  [ stylesFolderName <default:styles> <optional> ] [ -i Install Only <optional> ]
+    local INSTALL_ONLY=false
+    while getopts 'i' flag
+    do
+        case $flag in
+            i)
+                INSTALL_ONLY=true
+            ;;
+        esac
+    done
+
+    local dir=''
     # starting directory for redirect when finished
     pushd $PWD 1>/dev/null
 
-    findPackageJSON $@
+    if [[ $INSTALL_ONLY ]]; then
+        findPackageJSON ${2:$(git symbolic-ref --short HEAD)}
+    else
+        findPackageJSON $@
+    fi
 
     if [[ $dir != '' ]]
     then
@@ -422,18 +394,23 @@ function start() {
         trap 'echo && echo $(colorText $cMessage "...Kickoff Stopped") && shutdown && popd 1>/dev/null && trap - 1 2 3 6 && return' 1 2 3 6
 
         # cd to dir containing package.json
-        $dir
-
-        # Start message
-        Success "Starting Kickoff in $dir"
-        Message 'To stop, press Control-C\n'
+        cd $dir &>/dev/null
 
         (
             (
                 npm install &>/dev/null
             ) &
-            loadingAnimation $! "Installing NPM and stuff. This may take up to a few minutes."
+            loadingAnimation $! "Installing NPM and stuff in $dir. This may take up to a few minutes."
         )
+
+        if [[ $INSTALL_ONLY ]]; then
+            - &>/dev/null
+            return
+        fi
+
+        # Start gulp
+        Success "Starting Kickoff in $dir"
+        Message 'To stop, press Control-C\n'
 
         gulp
     else
@@ -445,7 +422,7 @@ function start() {
         echo $(formatText 'bold' underline '\nHold up! Wait a minute. Make sure you read ^this^ before you move on.\n')
     fi
 
-    trap - 1 2 3 6
+    - &>/dev/null
 }
 
 
@@ -504,16 +481,15 @@ function addStyles() {
         loadingAnimation $! "Adding Kickoff"
     )
 
-    # (
-    #     npm install &>/dev/null
-    # ) &
-    # loadingAnimation $! "Installing Kickoff"
-
     popd 1>/dev/null
 
     #find new Kickoff folder
     dir=''
     findPackageJSON $@
+    (
+        npm install &>/dev/null
+    ) &
+    loadingAnimation $! "Installing Kickoff"
 
     Success "Kickoff added to $dir"
 
@@ -534,11 +510,29 @@ function mvCWS() {
     fi
 }
 function repairWorktrees() {
-    setEnv
+    findEnv
+    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+        $ENV$branch
+    else
+        Error "No environment found"
+
+        read "Do you want to continue? (y/n) " REPLY
+
+        case $REPLY in
+            [yY][eE][sS]|[yY])
+                echo
+                continue
+            ;;
+            [nN][oO]|[nN]|''|*)
+                echo
+                Message "Bye"
+                return
+            ;;
+        esac
+    fi
 
     local repairNeeded=false
 
-    ${1:-$ENV}
     (
         (
             git for-each-ref --shell --format="ref=%(refname:short)" refs/heads | \
@@ -584,58 +578,97 @@ function repairWorktrees() {
 }
 
 function repairWorktree() {
-    setEnv
+    local branch=$(git branch |grep \* | cut -d " " -f2)
+
+    findEnv
+    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+        $ENV$branch
+    else
+        Error "No environment found"
+
+        read "Do you want to continue? (y/n) " REPLY
+
+        case $REPLY in
+            [yY][eE][sS]|[yY])
+                echo
+                continue
+            ;;
+            [nN][oO]|[nN]|''|*)
+                echo
+                Message "Bye"
+                return
+            ;;
+        esac
+    fi
 
     local ref=''
     local repairNeeded=false
 
     if [[ $2 != '' ]]; then
-        ${1:-$ENV}
         ref=${2:-$(git symbolic-ref --short HEAD)}
     else
-        $ENV
         ref=${1:-$(git symbolic-ref --short HEAD)}
+        Warning 'No worktree referenced' $cEnd
+        read REPLY"?$(Color -m 'What worktree do you want to repair? (enter nothing to skip)'$cEnd -ub): "
+
+        case $REPLY in
+            *)
+                echo
+
+                if [ -d $ENV$ref ]; then
+                    (
+                        (
+                            if [ ! -d $ENV.git/worktrees/$ref ]; then
+                                repairNeeded=true
+
+                                # Create worktree ref
+                                mkdir $ENV.git/worktrees/$ref
+                            fi
+
+                            #============================================================
+                            #= Debug
+                            #============================================================
+                            # echo 'ENV ~> '$ENV
+                            # echo 'ref ~> '$ref
+                            # echo 'repairNeeded ~> '$repairNeeded
+                            #============================================================
+
+                            $ENV.git/worktrees/$ref
+
+                            if [ ! -f COMMIT_EDITMSG ]; then
+                                # Create COMMIT_EDITMSG
+                                touch COMMIT_EDITMSG
+                            fi
+                            if [ ! -f FETCH_HEAD ]; then
+                                # Create FETCH_HEAD
+                                touch FETCH_HEAD
+                            fi
+                            echo '../..' > commondir
+                            echo "$ENV$ref/.git" > gitdir
+                            echo "ref: refs/heads/$ref" > HEAD
+                            echo $(git log -n 1 --pretty=format:"%H") > ORIG_HEAD
+
+                            -
+                            $ENV$ref
+                            echo "gitdir: $ENV.git/worktrees/$ref" > .git
+                            git reset --quiet
+                        ) &
+                        loadingAnimation $! "Repairing worktrees"
+                    )
+                else
+                    Alert "Sorry, $whoami. I can't find the worktree $ENV$ref."
+                    return 1
+                fi
+
+                Alert $cSuccess "$ref repaired."
+            ;;
+            '')
+                echo
+                Message 'Bye!'
+            ;;
+        esac
+
     fi
-
-    if [ -d $ENV$ref ]; then
-        (
-            (
-                if [ ! -d $ENV.git/worktrees/$ref ]; then
-                    repairNeeded=true
-
-                    # Create worktree ref
-                    mkdir $ENV.git/worktrees/$ref
-                fi
-
-                -
-                $ENV.git/worktrees/$ref
-
-                if [ ! -f COMMIT_EDITMSG ]; then
-                    # Create COMMIT_EDITMSG
-                    touch COMMIT_EDITMSG
-                fi
-                if [ ! -f FETCH_HEAD ]; then
-                    # Create FETCH_HEAD
-                    touch FETCH_HEAD
-                fi
-                echo '../..' > commondir
-                echo "$ENV$ref/.git" > gitdir
-                echo "ref: refs/heads/$ref" > HEAD
-                echo $(git log -n 1 --pretty=format:"%H") > ORIG_HEAD
-
-                -
-                $ENV$ref
-                echo "gitdir: $ENV.git/worktrees/$ref" > .git
-                git reset --quiet
-            ) &
-            loadingAnimation $! "Repairing worktrees"
-        )
-    else
-        Alert "Sorry, $whoami. I can't find the worktree $ENV$ref."
-        return 1
-    fi
-
-    Alert $cSuccess "$ref repaired."
 
     -
 }
@@ -789,11 +822,11 @@ cError=$Red
 cMessage=$Blue
 cEnd=$(tput sgr0)
 
-ALERTWIDTH=150
+ALERTWIDTH=
 
 #Set columns for alert width
 function setAlertWidth() {
-    if [[ $(tput cols) > 150 ]]; then
+    if [ $(tput cols) -ge 150 ]; then
         ALERTWIDTH=150
     else
         ALERTWIDTH=$(tput cols)
@@ -856,7 +889,7 @@ function Alert() {
 
     setParams $@
 
-    echo -e $(Highlight $color "$(Color $txt_color $str)")
+    echo -e $(Color $txt_color "$(Highlight $color $str)")
 }
 function Prompt() {
     REPLY=''
@@ -904,16 +937,18 @@ function setParams() {
     fi
 }
 function setString() {
+    setAlertWidth
+
     space=''
     delimeter=${1:-' '}
-    width=${2:$ALERTWIDTH-${#str}}
+
     if [[ $delimeter == " " ]]; then
-        for (( i = 1; i <= ($ALERTWIDTH-${#str}); i += 1 )); do
+        for (( i = 1; i <= ($ALERTWIDTH-${#str}-1); i += 1 )); do
             space=$space$delimeter
         done
         str="$str$space"
     else
-        for (( i = 1; i <= ($ALERTWIDTH-${#str}) / 2; i += 1 )); do
+        for (( i = 1; i <= ($ALERTWIDTH-${#str}-1) / 2; i += 1 )); do
             space=$space$delimeter
         done
         str="$space$str$space "
@@ -959,13 +994,13 @@ function highlightText() {
     if [[ color ]]; then
         str=$2
         setString ${3-'-'}
-        res=$res$(tput setab $(fromHex $1))
+        res=$res
     else
         str=$1
         setString ${2-'-'}
         res=$res
     fi
-    res="$res $str"
+    res="$(tput setab $(fromHex $1))$res $str"
 
     endFormatting
 }
@@ -1193,18 +1228,13 @@ function loadingAnimation() {
     esac
 
     local i=0
+    str=$2
     tput civis # cursor invisible
     while kill -0 $pid 2>/dev/null; do
         local i=$(((i + $charwidth) % ${#spin}))
-        space=''
-        width=${2:$ALERTWIDTH-${#str}}
 
-        for (( j = 1; j <= ($ALERTWIDTH-${#str}); j += 1 )); do
-            space=$space' '
-        done
-
-        if [[ $2 != "" ]]; then
-            echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) $(rev<<<${spin:$i:$charwidth}) $2 ${spin:$i:$charwidth} $(tput sgr0) \r"
+        if [[ $str != "" ]]; then
+            echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) $(rev<<<${spin:$i:$charwidth}) $str ${spin:$i:$charwidth} $(tput sgr0) \r"
         else
             echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) Please wait  Loading ${spin:$i:$charwidth} $(tput sgr0) \r"
         fi
@@ -1215,7 +1245,7 @@ function loadingAnimation() {
 
     wait $pid # capture exit code
 
-    tput cnorm
+    echo "$(tput cnorm)"
 
     return $?
 }

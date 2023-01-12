@@ -8,7 +8,7 @@ Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on whi
 source ~/.profile
 ```
 
-## Updating your aliases
+## Installing aliases
 In your terminal, run:
 
 ```sh
@@ -20,6 +20,15 @@ to open up your `.profile`, and replace what you have with the code in the `.pro
 After you put the latest code in your `.profile`, make sure you update the `JVPATH` variable to reflect the path to your CWS folder.
 
 If your CWS folder is in your User Directory, for example, you would change `JVPATH` from `~/Jobvite/CWS` to `~/CWS`.
+
+## Updating aliases
+In your terminal, run:
+
+```sh
+updateAliases
+```
+
+enter your username and password if prompted
 
 ## Update (Jan 5 2023)
 

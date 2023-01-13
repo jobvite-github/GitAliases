@@ -376,6 +376,9 @@ function start() {
             i)
                 INSTALL_ONLY=true
             ;;
+            *)
+                INSTALL_ONLY=false
+            ;;
         esac
     done
 
@@ -404,16 +407,15 @@ function start() {
             loadingAnimation $! "Installing NPM and stuff in $dir. This may take up to a few minutes."
         )
 
-        if [[ $INSTALL_ONLY ]]; then
+        if [[ !$INSTALL_ONLY ]]; then
+            # Start gulp
+            Success "Starting Kickoff in $dir"
+            Message 'To stop, press Control-C\n'
+
+            gulp
+        else
             - &>/dev/null
-            return
         fi
-
-        # Start gulp
-        Success "Starting Kickoff in $dir"
-        Message 'To stop, press Control-C\n'
-
-        gulp
     else
         Warning "! There is no Kickoff found in $PWD/$1 !"
         echo '\ncd into the correct directory,\nuse command\n'

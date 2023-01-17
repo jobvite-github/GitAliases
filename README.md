@@ -9,7 +9,7 @@ source ~/.profile
 ```
 
 ## Installing aliases
-In your terminal, run:
+1 In your terminal, run:
 
 ```sh
 config
@@ -20,6 +20,12 @@ to open up your `.profile`, and replace what you have with the code in the `.pro
 After you put the latest code in your `.profile`, make sure you update the `JVPATH` variable to reflect the path to your CWS folder.
 
 If your CWS folder is in your User Directory, for example, you would change `JVPATH` from `~/Jobvite/CWS` to `~/CWS`.
+
+2 Save your file, then open a new Shell, or run:
+
+```sh
+reload
+```
 
 ## Updating aliases
 In your terminal, run:

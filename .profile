@@ -356,6 +356,7 @@ function findPackageJSON() {
     if [ -f package.json ]
     then
         dir=$(dirname 'package.json')
+        return
     fi
 
     for (( i=1; i <= 3; i++ ))
@@ -376,9 +377,6 @@ function start() {
             i)
                 INSTALL_ONLY=true
             ;;
-            *)
-                INSTALL_ONLY=false
-            ;;
         esac
     done
 
@@ -387,7 +385,7 @@ function start() {
     pushd $PWD 1>/dev/null
 
     if [[ $INSTALL_ONLY ]]; then
-        findPackageJSON ${2:$(git symbolic-ref --short HEAD)}
+        findPackageJSON ${1:$(git symbolic-ref --short HEAD)}
     else
         findPackageJSON $@
     fi
@@ -407,13 +405,14 @@ function start() {
             loadingAnimation $! "Installing NPM and stuff in $dir. This may take up to a few minutes."
         )
 
-        if [[ !$INSTALL_ONLY ]]; then
+        if ! $INSTALL_ONLY; then
             # Start gulp
             Success "Starting Kickoff in $dir"
             Message 'To stop, press Control-C\n'
 
             gulp
         else
+            Success " √ Kickoff installed"
             - &>/dev/null
         fi
     else

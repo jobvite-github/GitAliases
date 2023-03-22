@@ -30,7 +30,6 @@ function updateAliases() {
                 ) &
                 loadingAnimation $! "Updating .profile"
             )
-            config
         ;;
         *)
             return
@@ -41,13 +40,15 @@ function updateAliases() {
 #============================================================
 #= Global Variables
 #============================================================
-GIT_HEAD=$(git symbolic-ref --short HEAD) &>/dev/null
-
 ENV=''
 ENVTYPE=''
 function findEnv() {
     dir=${1-$PWD}
     step=${2-0}
+    if [[ $3 != '' ]]; then
+        dir=$1$2
+        step=$3
+    fi
     result="${dir%"${dir##*[!/]}"}" # extglob-free multi-trailing-/ trim
     result="${result##*/}"                  # remove everything before the last /
     result=${result:-/}
@@ -167,26 +168,50 @@ function gitPush() {
         cd $ENV$(git branch |grep \* | cut -d " " -f2)
     fi
 
-    # (
-    #     (
-    #         (
+    (
+        (
+            (
                 git commit -m $msg &>/dev/null
 
                 if ( $f ) then
-                    git push origin $branch -f 2>/dev/null
+                    git push origin $branch -f &>/dev/null
                 else
-                    git push origin $branch 2>/dev/null
+                    git push origin $branch &>/dev/null
                 fi
 
                 if ( $t ) then
-                    git tag -a $tag -m $tmg
-                    git push origin --tags 2>/dev/null
+                    git tag -a $tag -m $tmg &>/dev/null
+                    git push origin --tags &>/dev/null
                 fi
 
-    #         )
-    #     ) &
-    #     loadingAnimation $! "Pushing to origin/$branch"
-    # )
+            )
+        ) &
+        loadingAnimation $! "Pushing to origin/$branch"
+    )
+    # $(Color $txt_color "$(HighlightLine $color $str)")
+    str=" $(git show -s --format='%h - %s') $cEnd"
+    # chk=" √ $cEnd"
+    chk=" $(echo -e '\U0001F44D') $cEnd"
+
+    echo && echo $(Color -b -c $cSuccess -m "$(Highlight $DarkGray $chk)")$(Color -c $Black -m "$(Highlight $Blue $str)") && echo
+}
+function gitPull() {
+    # Usage
+    #= gitPull
+    #
+    # You can specify a branch name by adding that branch name at
+    #    the end of the function call. Example:
+    #        gitPull <branch_name>
+    #-------------------------------------------------------------
+    local branch=$(git branch |grep \* | cut -d " " -f2)
+
+    (
+        (
+            git fetch origin $branch &>/dev/null
+            git pull origin $branch &>/dev/null
+        ) &
+        loadingAnimation $! "Updating branch \"$branch\""
+    )
 }
 
 function gwtn() {
@@ -257,7 +282,7 @@ function gwtm() {
 
     findEnv
     if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-        $ENV
+        cd $ENV
     fi
     if [[ $branch != "" ]]; then
 
@@ -272,36 +297,34 @@ function gwtm() {
                 git fetch  &>/dev/null
                 git pull  &>/dev/null
 
-                git show-ref --quiet refs/remotes/origin/$branch
-                if [[ $? == 0 ]]; then
+                if [ `git rev-parse --verify origin/$branch 2>/dev/null` ]; then
+                    Alert $cMessage "\"$branch\" already exists"
                     git worktree add --track -B $branch ./$branch origin/$branch  &>/dev/null
+                    Alert $cSuccess "\"$branch\" added!"
                 else
                     git worktree add $branch  &>/dev/null
                 fi
 
                 git checkout root  &>/dev/null
-                $branch/
+                cd $branch/ &>/dev/null
 
                 mkdir _dev
             ) &
             loadingAnimation $! "Setting up worktree \"$branch\""
         )
 
-        $ENV$branch &>/dev/null
+        cd $ENV$branch &>/dev/null
 
         (
             (
-                if [[ $? == 0 ]]; then
-                    git push origin $branch  &>/dev/null
+                if [ `git rev-parse --verify origin/$branch 2>/dev/null` ]; then
                 else
-                    git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git"  &>/dev/null
-                    git push --set-upstream origin $(git symbolic-ref --short HEAD)  &>/dev/null
+                    git push origin $branch 2>/dev/null
+                    Alert $cSuccess "\"$branch\" created!"
                 fi
             ) &
             loadingAnimation $! "Setting up in GitHub"
         )
-
-        Alert $cSuccess "\"$branch\" created!"
     else
         Error "Need a worktree name ( e.x. gwtn myworktree )"
         return
@@ -310,32 +333,75 @@ function gwtm() {
     - &>/dev/null
 }
 function gwtr() {
-    branch=${1:$(git symbolic-ref --short HEAD)}
     trap 'echo && echo $(Alert $cWarning "Stopped removing worktree \"$branch\"\nCheck on what has been deleted") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
 
-    if [[ $1 != "" ]]; then
-        branch=$1
-    elif [[ $1 == "" ]]; then
-        branch=$(git symbolic-ref --short HEAD)
-    elif [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]]; then
+    local branch=${1:-$(git symbolic-ref --short HEAD)}
+    local prune=${2:-false}
+
+    if [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]]; then
         Message "You can't use gwtr without a parameter in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr"
         return
     fi
 
     findEnv
     if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-        cd $ENV &>/dev/null
+        cd $ENV/ &>/dev/null
     fi
 
     (
         (
-            git worktree remove $branch 2>/dev/null
+            git worktree remove $branch &>/dev/null
         ) &
         loadingAnimation $! "Removing worktree \"$branch\""
     )
 
     Success "$branch has been removed."
-    # git worktree prune
+
+
+    if ${prune}; then
+        (
+            (
+                git worktree prune
+            ) &
+            loadingAnimation $! "Pruning..."
+        )
+    fi
+}
+function gwtd() {
+    local branch
+
+    if [[ $1 != "" ]]; then
+        branch=$1
+    elif [[ $1 == "" ]]; then
+        branch=$(git symbolic-ref --short HEAD)
+    fi
+
+    if [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]]; then
+        Message "You can't use gwtr without a parameter in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr"
+        return
+    fi
+
+    findEnv
+    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+        cd $ENV/ &>/dev/null
+    fi
+
+    (
+        (
+            git worktree remove $branch &>/dev/null
+        ) &
+        loadingAnimation $! "Removing worktree \"$branch\""
+    )
+
+    (
+        (
+            git branch -d $branch &>/dev/null
+            git push origin -d $branch 2>/dev/null
+        ) &
+        loadingAnimation $! "Deleting branch \"$branch\""
+    )
+
+    Success "Branch \"$branch\" has been deleted."
 }
 function tagging() {
     if [[ $1 == "" ]]; then
@@ -709,7 +775,7 @@ alias mg='git merge'
 alias mpeek='git log master.. --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
 alias newb='git checkout -b'
 alias pages='git stash && git checkout gh-pages'
-alias peek='git log --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20} --'
+alias peek='git fetch && git log --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20} --'
 alias peekall='git log --graph origin --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
 alias poke='git push origin $(git symbolic-ref --short HEAD)'
 alias pop='git stash pop'
@@ -733,7 +799,7 @@ alias stashed='git stash show'
 alias stats='git log --stat --all --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-50}'
 alias tag='git tag'
 alias tags='git tag -l'
-alias tug='git pull origin $(git symbolic-ref --short HEAD)'
+alias tug='gitPull'
 alias whichup=whichupstream='git branch -vv'
 
 #-------------------------------------------------------------
@@ -809,6 +875,8 @@ alias zipit='zip -er $1.zip $2'
 
 #- Colors
 Black='#000000'
+Gray='#D0CFD0'
+DarkGray='#202020'
 White='#FFFFFF'
 Red='#C8334D'
 Orange='#FEA42F'
@@ -816,6 +884,7 @@ Yellow='#C7C748'
 Green='#43CC63'
 Teal='#8AFFC8'
 Blue='#88D1FE'
+DarkBlue='#4DACFF'
 Dark='#615340'
 
 cSuccess=$Green
@@ -879,7 +948,8 @@ function Highlight() {
     # $1: highlight color <required>
     # $2: text content <required>
     # $3: spacing character <optional>
-    echo -e $(formatText 'bold' "$(highlightText $1 $2)$cEnd")
+    res=''
+    echo -e "$(tput setab $(fromHex $1))$res$2$cEnd"
 }
 
 #- Formatting Functions
@@ -891,7 +961,7 @@ function Alert() {
 
     setParams $@
 
-    echo -e $(Color $txt_color "$(Highlight $color $str)")
+    echo -e $(Color $txt_color "$(HighlightLine $color $str)")
 }
 function Prompt() {
     REPLY=''
@@ -986,7 +1056,7 @@ function colorText() {
 
     endFormatting
 }
-function highlightText() {
+function HighlightLine() {
     # $1: highlight color <required>
     # $2: text content <required>
     color=${1-null}
@@ -1232,7 +1302,7 @@ function loadingAnimation() {
     local i=0
     str=$2
     tput civis # cursor invisible
-    while kill -0 $pid 2>/dev/null; do
+    while kill -0 $pid &>/dev/null; do
         local i=$(((i + $charwidth) % ${#spin}))
 
         if [[ $str != "" ]]; then

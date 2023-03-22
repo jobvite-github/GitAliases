@@ -476,7 +476,7 @@ function addStyles() {
     (
         (
             git init &> /dev/null
-            git remote add kickoff https://github.com/jobvite-github/Kickoff.git &> /dev/null
+            git remote add kickoff git@github.com:jobvite-github/Kickoff.git &> /dev/null
             git fetch kickoff &> /dev/null
             git checkout kickoff/master &> /dev/null
             rm -rf .git

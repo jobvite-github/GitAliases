@@ -437,23 +437,20 @@ function findPackageJSON() {
 function start() {
     # Usage: Start  [ stylesFolderName <default:styles> <optional> ] [ -i Install Only <optional> ]
     local INSTALL_ONLY=false
-    while getopts 'i' flag
-    do
-        case $flag in
-            i)
-                INSTALL_ONLY=true
-            ;;
-        esac
-    done
+    if [[ $1 == '-i' ]]; then
+        INSTALL_ONLY=true
+    fi
 
     local dir=''
     # starting directory for redirect when finished
     pushd $PWD 1>/dev/null
 
     if [[ $INSTALL_ONLY ]]; then
-        findPackageJSON ${1:$(git symbolic-ref --short HEAD)}
+        findPackageJSON ${2:$(git symbolic-ref --short HEAD)}
+        echo $(findPackageJSON ${2:$(git symbolic-ref --short HEAD)})
     else
         findPackageJSON $@
+        echo $(findPackageJSON $@)
     fi
 
     if [[ $dir != '' ]]

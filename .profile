@@ -251,6 +251,8 @@ function gwtn() {
             loadingAnimation $! "Setting up worktree \"$branch\""
         )
 
+        start -i $branch
+
         cd $ENV$branch &>/dev/null
 
         (
@@ -264,8 +266,6 @@ function gwtn() {
             ) &
             loadingAnimation $! "Setting up in GitHub"
         )
-
-        start -i
 
         Alert $cSuccess "\"$branch\" created!\nOpening in VSCode"
 
@@ -381,6 +381,9 @@ function gwtd() {
         return
     fi
 
+    cd $ENV$branch &>/dev/null
+    git checkout . &>/dev/null
+
     findEnv
     if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
         cd $ENV/ &>/dev/null
@@ -395,8 +398,8 @@ function gwtd() {
 
     (
         (
-            git branch -d $branch &>/dev/null
-            git push origin -d $branch 2>/dev/null
+            git branch -D $branch &>/dev/null
+            git push origin --delete $branch 2>/dev/null
         ) &
         loadingAnimation $! "Deleting branch \"$branch\""
     )
@@ -476,6 +479,7 @@ function start() {
             gulp
         else
             Success " √ Kickoff installed"
+            echo
             - &>/dev/null
         fi
     else

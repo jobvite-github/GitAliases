@@ -343,6 +343,9 @@ function gwtr() {
         return
     fi
 
+    cd $ENV$branch &>/dev/null
+    git checkout . &>/dev/null
+
     findEnv
     if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
         cd $ENV/ &>/dev/null

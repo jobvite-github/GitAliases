@@ -70,6 +70,12 @@ function findEnv() {
 
     step=0
 }
+function goToCurrentBranch() {
+    local branch=$(git branch |grep \* | cut -d " " -f2)
+
+    findEnv
+    cd $ENV$branch
+}
 
 #============================================================
 #= Aliases / Functions
@@ -219,7 +225,10 @@ function gwtn() {
 
     if [[ $branch != "" ]]; then
 
-        [ -d $ENV$branch ] && return
+        if [ -d $ENV$branch ]; then
+            Alert "It looks like $ENV$branch is already in your worktrees."
+            return
+        fi
 
         findEnv
         if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
@@ -442,16 +451,26 @@ function findPackageJSON() {
 }
 function start() {
     # Usage: Start  [ stylesFolderName <default:styles> <optional> ] [ -i Install Only <optional> ]
-    local INSTALL_ONLY=false
-    if [[ $1 == '-i' ]]; then
-        INSTALL_ONLY=true
-    fi
 
     local dir=''
+    
+    SKIP_INSTALL=false
+    INSTALL_ONLY=false
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            -i | --install-only) INSTALL_ONLY=true ;;
+            -s | --skip-install) SKIP_INSTALL=true ;;
+            -d | --dir) dir=$2;;
+            *) dir=$1 ;;
+        esac
+        shift
+    done
+
     # starting directory for redirect when finished
     pushd $PWD 1>/dev/null
 
-    if [[ $INSTALL_ONLY ]]; then
+    if ! $INSTALL_ONLY; then
         findPackageJSON ${2:$(git symbolic-ref --short HEAD)}
         echo $(findPackageJSON ${2:$(git symbolic-ref --short HEAD)})
     else
@@ -459,20 +478,26 @@ function start() {
         echo $(findPackageJSON $@)
     fi
 
-    if [[ $dir != '' ]]
-    then
+    # if [[ $dir != '' ]]
+    if [ -d $dir ]; then
         # Catch for exiting on ctrl+c for exit message and returning from packaged dir
         trap 'echo && echo $(colorText $cMessage "...Kickoff Stopped") && shutdown && popd 1>/dev/null && trap - 1 2 3 6 && return' 1 2 3 6
 
         # cd to dir containing package.json
         cd $dir &>/dev/null
 
-        (
+        if ! $SKIP_INSTALL; then
             (
-                npm install &>/dev/null
-            ) &
-            loadingAnimation $! "Installing NPM and stuff in $dir. This may take up to a few minutes."
-        )
+                (
+                    npm install &>/dev/null
+                ) &
+                loadingAnimation $! "Installing NPM and stuff in $dir. This may take up to a few minutes."
+            )
+
+            Success " √ Kickoff installed"
+        else
+            echo
+        fi
 
         if ! $INSTALL_ONLY; then
             # Start gulp
@@ -480,18 +505,13 @@ function start() {
             Message 'To stop, press Control-C\n'
 
             gulp
-        else
-            Success " √ Kickoff installed"
-            echo
-            - &>/dev/null
         fi
     else
-        Warning "! There is no Kickoff found in $PWD/$1 !"
-        echo '\ncd into the correct directory,\nuse command\n'
-        Message ' > addStyles'
-        echo '\nto add a new Kickoff to your project,\nor specify in which folder, not including, your Kickoff exists by doing:\n'
-        Message ' > start path/to'
-        echo $(formatText 'bold' underline '\nHold up! Wait a minute. Make sure you read ^this^ before you move on.\n')
+        Warning "There is no Kickoff found in $dir"
+        echo 'Try installing npm with start -i'
+        echo '  $: start -i'
+        echo 'or specify a path after start'
+        echo '  $: start path/to/'
     fi
 
     - &>/dev/null
@@ -830,11 +850,27 @@ function fz() {
     fi
 }
 function getdev() {
-    if [ -d _dev/dev ] || mkdir -p _dev/dev
-    (
-        echo $FZPWD | pbcopy && sftp -r $FZUSER@sftp.jobvite.com:/uploads/$(git symbolic-ref --short HEAD)/dev
-        get -r dev/
-    )
+    local branch=$(git branch |grep \* | cut -d " " -f2)
+
+    goToCurrentBranch
+
+    if [ ! -d _dev ] && mkdir _dev
+
+    cd _dev/
+
+    Message "Connecting to FileZilla and downloading the dev folder for $branch"
+    echo "When prompted for your password, you can type in your password OR, if you have your \$FZUSER and \$FZPWD set in your aliases global variables, just paste as I've just copied that for you." $cEnd
+    echo
+
+echo $FZPWD | pbcopy && sftp -r $FZUSER@sftp.jobvite.com:/uploads/$branch << EOF
+get -r dev
+EOF
+
+    goToCurrentBranch
+    echo
+
+
+    if [ -d _dev/dev ] && Success " √ Downloaded /uploads/$branch/dev to $branch/_dev/dev"
 
 }
 alias fzu="echo $FZPWD | pbcopy | sftp $FZUSER@sftp.jobvite.com:/uploads/"
@@ -1209,7 +1245,7 @@ function patience() {
 }
 
 function animationTest() {
-    MSG=${1-'Fuck off, I am testing some shit here. 漣'}
+    MSG=${1-'Testing with a medium length message.'}
 
     (
         ( sleep 2 ) &
@@ -1310,12 +1346,12 @@ function loadingAnimation() {
         local i=$(((i + $charwidth) % ${#spin}))
 
         if [[ $str != "" ]]; then
-            echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) $(rev<<<${spin:$i:$charwidth}) $str ${spin:$i:$charwidth} $(tput sgr0) \r"
+            echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) $(rev<<<${spin:$i:$charwidth}) $str ${spin:$i:$charwidth} $(tput sgr0)"
         else
-            echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) Please wait  Loading ${spin:$i:$charwidth} $(tput sgr0) \r"
+            echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) Please wait  Loading ${spin:$i:$charwidth} $(tput sgr0)"
         fi
 
-        echo -en "\033[$1D\r"
+        echo -en "\033[$1D"
         sleep .16
     done
 

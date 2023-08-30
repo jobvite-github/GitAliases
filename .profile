@@ -460,7 +460,7 @@ function start() {
     while [ $# -gt 0 ]; do
         case $1 in
             -i | --install-only) INSTALL_ONLY=true ;;
-            -s | --skip-install) SKIP_INSTALL=true ;;
+            -s | --skip-install | --skip) SKIP_INSTALL=true ;;
             -d | --dir) dir=$2;;
             *) dir=$1 ;;
         esac

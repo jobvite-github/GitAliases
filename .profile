@@ -1,27 +1,28 @@
-#============================================================
-#= Config Values
+#== Config Values
 #
 # !!IMPORTANT!!
 # Set these values to ensure your aliases work correctly
 #
 #============================================================
-TLPATH='' # Set your TLPATH variable to your Talemetry folder's path.
-JVPATH=~/Jobvite/CWS/ # Set your JVPATH variable to your Jobvite CWS folder's path.
+JVPATH=~/Employ/Jobvite/ # Set your JVPATH variable to your Jobvite folder's path. MUST END WITH /
+TLPATH=~/Employ/Talemetry/ # Set your TLPATH variable to your Talemetry folder's path. MUST END WITH /
 
 # FZ Stuff
 #-------------------------------------------------------------
 FZUSER=''    # FileZilla Username
 FZPWD=''    # FileZilla Password
 
-# End Config
+#== End Config Values
+#
+# Set these values to ensure your aliases work correctly
 #============================================================
 
 # Load / Edit / Update .profile
 #-------------------------------------------------------------
-alias config='code ~/.profile && echo $(Alert $cWarning "Editing ~/.profile ")'
-alias reload='source ~/.profile && echo $(Alert $cSuccess ".profile Reloaded ")'
+alias config='code ~/.profile && echo $(Highlight $cWarning " Editing ~/.profile ")$(tput cnorm)'
+alias reload='source ~/.profile && echo $(Highlight $cSuccess " .profile Reloaded ")$(tput cnorm)'
 function updateAliases() {
-    read res"?$(Color -m 'This will overwrite your .profile. Are you sure you want to continue? [y/n]'$cEnd -ub): "
+    read res"?$(Color -m 'This will overwrite your .profile. Are you sure you want to continue? [y/n]' -ub): "
     case $res in
         [yY])
             (
@@ -77,17 +78,460 @@ function goToCurrentBranch() {
     cd $ENV$branch
 }
 
+#-------------------------------------------------------------
+# Find Helpers
+#-------------------------------------------------------------
+function fn() {
+    if [[ $3 != "" ]]; then
+        find $1 -name "$2" -prune -maxdepth $3
+    elif [[ $2 != "" ]]; then
+        find $1 -name "$2" -prune -maxdepth 1
+    elif [[ $1 != "" ]]; then
+        find . -name "$1" -prune -maxdepth 1
+    else
+        Message 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
+    fi
+}
+function fnd() {
+    if [[ $3 != "" ]]; then
+        find $1 -name "$2" -type d -prune -maxdepth $3
+    elif [[ $2 != "" ]]; then
+        find $1 -name "$2" -type d -prune -maxdepth 1
+    elif [[ $1 != "" ]]; then
+        find . -name "$1" -type d -prune -maxdepth 1
+    else
+        Message 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
+    fi
+}
+function contains() { case "$1" in *"$2"*) true ;; *) false ;; esac }
+#-------------------------------------------------------------
+
+#============================================================
+# Text Formatting (tput)
+#============================================================
+
+#- Colors
+declare -A colors=(
+    [Black]='#000000'
+    [Gray]='#D0CFD0'
+    [DarkGray]='#202020'
+    [White]='#FFFFFF'
+    [Red]='#C8334D'
+    [Orange]='#FEA42F'
+    [Yellow]='#C7C748'
+    [Green]='#43CC63'
+    [Teal]='#8AFFC8'
+    [Blue]='#88D1FE'
+    [DarkBlue]='#4DACFF'
+    [Dark]='#615340'
+)
+Black=${colors[Black]}
+Gray=${colors[Gray]}
+DarkGray=${colors[DarkGray]}
+White=${colors[White]}
+Red=${colors[Red]}
+Orange=${colors[Orange]}
+Yellow=${colors[Yellow]}
+Green=${colors[Green]}
+Teal=${colors[Teal]}
+Blue=${colors[Blue]}
+DarkBlue=${colors[DarkBlue]}
+Dark=${colors[Dark]}
+
+cSuccess=${colors[Green]}
+cWarning=${colors[Orange]}
+cError=${colors[Red]}
+cMessage=${colors[Blue]}
+
+function hexToColor() {
+    local hex_value=$1
+    
+    # Validate hex value
+    if [[ ! $hex_value =~ ^#[0-9a-fA-F]+$ ]]; then
+        echo "Invalid hex value: $hex_value"
+        return 1
+    fi
+
+    # Remove '#' from hex value
+    hex_value=${hex_value#"#"}
+
+    r=$(printf '0x%0.2s' "$hex_value")
+    g=$(printf '0x%0.2s' ${hex_value#??})
+    b=$(printf '0x%0.2s' ${hex_value#????})
+    rgb=$(((r<75?0:(r-35)/40)*6*6+(g<75?0:(g-35)/40)*6+(b<75?0:(b-35)/40)+16))
+
+    echo $rgb
+}
+function hexToTput() {
+    local hex_value=$1
+
+    # Validate hex value
+    if [[ ! $hex_value =~ ^#?[0-9a-fA-F]+$ ]]; then
+        echo "Invalid hex value: $hex_value"
+        return 1
+    fi
+
+    # Remove '#' from hex value
+    hex_value=${hex_value#"#"}
+
+    # Convert hex to decimal
+    local decimal_value=$((16#$hex_value))
+
+    # Map decimal value to tput color value
+    local tput_color=$((decimal_value % 8 + 30))
+
+    echo $tput_color
+}
+function formatText() {
+	local -A formatMap=(
+		[normal]=$(tput sgr0)
+		[bold]=$(tput bold)
+		[underline]=$(tput smul)
+		[nounderline]=$(tput rmul)
+	)
+	local str=''
+	for arg in "$@"; do
+		if [[ ${formatMap[$arg]} ]]; then
+			str+="${formatMap[$arg]}"
+		fi
+	done
+	str+="${@: -1}"
+	
+    echo -e $str$(tput sgr0)
+}
+function colorText() {
+    local color=${1:=$Yellow}
+    local output="${2:=""}"
+
+    output="$(tput setaf $(hexToColor $color))$output"
+    
+    echo -e $output$(tput sgr0)
+}
+function Color() {
+    # Usage: Color  [ -m Message <required> ] [ -c Color <required> ]
+    #               [ -n normal <optional> ] [ -b bold <optional> ] [ -u underline <optional> ]
+    local STR COLOR NORMAL BOLD UNDERLINE
+    while getopts 'm:c:nbu' flag
+    do
+        case $flag in
+            m) STR=$OPTARG;;
+            c) COLOR=$OPTARG;;
+            n) NORMAL='normal';;
+            b) BOLD='bold';;
+            u) UNDERLINE='underline';;
+        esac
+    done
+
+    if [ $OPTIND -eq 1 ]; then
+        if [[ $2 != '' ]]; then
+            COLOR=$1
+            STR=$2
+        else
+            STR=$1
+        fi
+    fi
+    shift $((OPTIND-1))
+
+    echo -e $(formatText $NORMAL $BOLD $UNDERLINE "$(colorText ${COLOR:-$Blue} $STR)")
+}
+function Highlight() {
+    local color=${1:=$Yellow}
+    local output="${2:=""}"
+
+    echo -e "$(tput setab $(hexToColor $color))$output$(tput sgr0)"
+}
+function HighlightLine() {
+    local color=${1:=$Yellow}
+    local output=" ${2:=""} "
+    local output_length=${#output}
+    local terminal_width=$(tput cols)
+
+    # Adjust the output based on terminal width
+    output+="$(printf "%*s" $((terminal_width - output_length)) " ")"
+
+    echo -e $(Highlight $color "$output")
+}
+#- Formatting Functions
+function Alert() {
+    local txt_color=${1:-$Black}
+    local color=${2:-$cWarning}
+    local str=${3:-''}
+
+    echo -e $(Color $txt_color "$(HighlightLine $color $str)")
+}
+function PromptYN() {
+    local str=$1
+    confirm=$2
+    deny=$3
+
+    read $str REPLY
+
+    case $REPLY in [yY][eE][sS]|[yY]|[jJ]|'')
+
+        echo
+        echo 'Okay. Will do!'
+        $confirm
+        return true
+        ;;
+        *)
+        echo
+        echo 'Okay. I will pass on that for now.'
+        $deny
+        return false
+        ;;
+    esac
+}
+
+#- Coloring Functions
+function Success() {
+    echo -e $(Color -c $cSuccess -m ${1:='Success'} -b)
+}
+function GitSuccess() {    
+    local msg=" ${1:="$(git show -s --format='%h - %s')"} "
+    local icon=" $(echo -e ${2:='\U0002714'}) "
+    local output="$msg"
+    local output_length=$((${#icon} + ${#output}))
+    local terminal_width=$(tput cols)
+
+    # Adjust the output based on terminal width
+    if (( output_length < terminal_width )); then
+        output+="$(printf "%*s" $((terminal_width - output_length)) " ")"
+    # elif (( output_length > terminal_width )); then
+    #     output="${output:0:$terminal_width-3}..."
+    fi
+
+    echo "$(tput sgr0)"
+    echo "$(Highlight $DarkGray "$icon")$(Highlight $Blue "$output")"
+    echo
+}
+function GitFailure() {
+    local msg=" ${1:='Error: Something went wrong'} "
+    local icon=" $(echo -e ${2:='\U0002716'}) "
+    local output="$msg"
+    local output_length=$((${#icon} + ${#output}))
+    local terminal_width=$(tput cols)
+
+    # Adjust the output based on terminal width
+    if (( output_length < terminal_width )); then
+        output+="$(printf "%*s" $((terminal_width - output_length)) " ")"
+    # elif (( output_length > terminal_width )); then
+    #     output="${output:0:$terminal_width-3}..."
+    fi
+
+    echo "$(tput sgr0)"
+    echo "$(Highlight $DarkGray "$icon")$(Highlight $cWarning "$output")"
+    echo
+}
+function Warning() {
+    echo -e $(Color -c $cWarning -m ${1:='Warning'} -b)
+}
+function Error() {
+    echo -e $(Color -c $cError -m ${1:='Error'} -b)
+}
+function Message() {
+    echo -e $(Color -c $cMessage -m ${1:='Message'})
+}
+
+# End Text Formatting
+#============================================================
+
+#============================================================
+#
+#= Animations
+#
+#============================================================
+#!/bin/bash
+# Shows a spinner while another command is running. Randomly picks one of 12 spinner styles.
+# @args command to run (with any parameters) while showing a spinner.
+#       E.g. ‹spinner sleep 10›
+
+function shutdown() {
+    tput cnorm
+}
+
+function loadingAnimation() {
+    local pid=${1:=$!} # Process Id of the previous running command
+    local msg=${2:="Please hold"} # Message to display
+    local spinIndex=${3:-$(($RANDOM % 15))}
+    local output=
+    local spin='-\|/' # Default spin characters
+    local charwidth=1 # Default char width
+
+    # Get the width of the terminal window
+    width=$(tput cols)
+
+    # Calculate the padding needed to fill the whole width
+    padding=$((width - ${#msg}))
+
+    # ---------------
+    #  --  Debug --
+    # ---------------
+    # echo "pid: $pid"
+    # echo "msg: $msg"
+    # echo "spin: $spin"
+    # echo "charwidth: $charwidth"
+
+    echo -n $(tput civis) # cursor invisible
+
+    case $spinIndex in
+    0)
+        spin='⠁⠂⠄⡀⢀⠠⠐⠈'
+        # charwidth=3
+        ;;
+    1)
+        spin='-\|/'
+        # charwidth=1
+        ;;
+    2)
+        spin="▁▂▃▄▅▆▇█▇▆▅▄▃▂▁"
+        # charwidth=3
+        ;;
+    3)
+        spin="▉▊▋▌▍▎▏▎▍▌▋▊▉"
+        # charwidth=3
+        ;;
+    4)
+        spin='←↖↑↗→↘↓↙'
+        # charwidth=3
+        ;;
+    5)
+        spin='▖▘▝▗'
+        # charwidth=3
+        ;;
+    6)
+        spin='┤┘┴└├┌┬┐'
+        # charwidth=3
+        ;;
+    7)
+        spin='◢◣◤◥'
+        # charwidth=3
+        ;;
+    8)
+        spin='◰◳◲◱'
+        # charwidth=3
+        ;;
+    9)
+        spin='◴◷◶◵'
+        # charwidth=3
+        ;;
+    10)
+        spin='◐◓◑◒'
+        # charwidth=3
+        ;;
+    11)
+        spin='⣾⣽⣻⢿⡿⣟⣯⣷'
+        # charwidth=3
+        ;;
+    12)
+        spin='.  .. ...'
+        # charwidth=3
+        ;;
+    13)
+        spin="🕛🕧🕐🕜🕑🕝🕒🕞🕓🕟🕔🕠🕕🕡🕖🕢🕗🕣🕘🕤🕙🕥🕚🕦"
+        # charwidth=4
+        ;;
+    14)
+        spin="🌑🌒🌓🌔🌕🌖🌗🌘"
+        # charwidth=4
+        ;;
+    esac
+
+    local i=0
+    while kill -0 $pid &>/dev/null; do
+        local i=$(((i + $charwidth) % ${#spin}))
+
+        if [[ $msg != "" ]]; then
+            output="$(tput bold)$(tput setaf $(hexToColor ${3=$Yellow})) $(rev <<< "${spin:$i:$charwidth}") $msg ${spin:$i:$charwidth}"
+        else
+            output="$(tput bold)$(tput setaf $(hexToColor ${3=$Yellow})) Please wait  Loading ${spin:$i:$charwidth}"
+        fi
+
+        # Calculate available width of the terminal
+        local terminal_width=$(tput cols)
+        local output_length=${#output}
+
+        # Adjust the output based on terminal width
+        if (( output_length < terminal_width )); then
+            local padding=$(( terminal_width - output_length ))
+            output+="$(printf "%*s" "$padding" " ")"
+        elif (( output_length > terminal_width )); then
+            output="${output:0:$terminal_width-3}..."
+        fi
+
+        echo -en "$output $(tput sgr0)\033[$1D"
+        sleep .1
+    done
+
+    echo -n "$(tput cnorm)"
+}
+
+function animationTest() {
+    MSG=${1-'Testing with a medium length message for 2 seconds.'}
+    
+    (
+        (
+            if sleep 2 &>/dev/null; then
+                Success "animationTest over with success"
+                exit
+            else
+                Warning "animationTest over with failure"
+                echo $(sleep 2)
+                exit 1
+            fi
+        ) &
+
+        loadingAnimation $! $MSG
+    )
+}
+
+function gitAnimationTest() {
+    MSG=${1-'Testing gitAnimationTest() with a medium length message for 2 seconds.'}
+    
+    (
+        ( 
+            if sleep 2 &>/dev/null; then
+                GitSuccess "gitAnimationTest over with success"
+                exit
+            else
+                GitFailure "gitAnimationTest over with failure"
+                echo $(sleep 2)
+                exit 1
+            fi
+        ) &
+        loadingAnimation $! 'Testing gitAnimationTest() with a medium length message for 2 seconds.'
+    )
+
+    echo "do stuff"
+
+    (
+        ( 
+            if sleep 2 &>/dev/null; then
+                GitSuccess "2nd gitAnimationTest over with success"
+                exit
+            else
+                GitFailure "2nd gitAnimationTest over with failure"
+                echo $(sleep 2)
+                exit 1
+            fi
+        ) &
+        loadingAnimation $! '2nd testing gitAnimationTest() with a medium length message for 2 seconds.'
+    )
+}
+
+# End Animations
+#============================================================
+
 #============================================================
 #= Aliases / Functions
 #============================================================
 
 # Git
 #-------------------------------------------------------------
-function camp() {
-    git add .
+function cmp() {
     gitPush $@
 }
-function cmp() {
+function camp() {
+    git add .
     gitPush $@
 }
 function gitPush() {
@@ -149,7 +593,10 @@ function gitPush() {
         then
             msg=$tmg
         else
-            Error "You have to have at least ONE thing to say about what you've done before you push"
+            echo
+            Error "Please include a message with your camp"
+            Color -c $DarkGray -m '> camp "Your custom message"'
+            echo
             return
         fi
     fi
@@ -176,30 +623,67 @@ function gitPush() {
 
     (
         (
-            (
-                git commit -m $msg &>/dev/null
-
-                if ( $f ) then
-                    git push origin $branch -f &>/dev/null
-                else
-                    git push origin $branch &>/dev/null
-                fi
-
-                if ( $t ) then
-                    git tag -a $tag -m $tmg &>/dev/null
-                    git push origin --tags &>/dev/null
-                fi
-
-            )
+            if git commit -m "$msg" &>/dev/null; then
+                GitSuccess "$(git show -s --format='%s')"
+                exit
+            else
+                GitFailure "Error: Failed to commit changes."
+                echo "$(git commit -m "$msg")"
+                exit 1
+            fi
         ) &
-        loadingAnimation $! "Pushing to origin/$branch"
+        loadingAnimation $! "Committing changes"
     )
-    # $(Color $txt_color "$(HighlightLine $color $str)")
-    str=" $(git show -s --format='%h - %s') $cEnd"
-    # chk=" √ $cEnd"
-    chk=" $(echo -e '\U0001F44D') $cEnd"
 
-    echo && echo $(Color -b -c $cSuccess -m "$(Highlight $DarkGray $chk)")$(Color -c $Black -m "$(Highlight $Blue $str)") && echo
+    (
+        (
+            if ( $f ); then
+                if git push origin "$branch" -f &>/dev/null; then
+                    GitSuccess "Commits pushed for branch: $branch"
+                    exit
+                else
+                    GitFailure "Error: Failed to push changes to origin/$branch."
+                    echo $(git push origin "$branch" -f)
+                    exit 1
+                fi
+            else
+                if git push origin "$branch" &>/dev/null; then
+                    GitSuccess "Commits pushed for branch: $branch"
+                    exit
+                else
+                    GitFailure "Error: Failed to push changes to origin/$branch."
+                    echo $(git push origin "$branch")
+                    exit 1
+                fi
+            fi
+        ) &
+        loadingAnimation $! "Pushing changes"
+    )
+
+    (
+        (
+            if ( $t ); then
+                if git tag -a "$tag" -m "$tmg" &>/dev/null; then
+                    GitSuccess "Success: Tag $tag created."
+                    exit
+                else
+                    GitFailure "Error: Failed to create tag $tag."
+                    echo $(git tag -a "$tag" -m "$tmg")
+                    exit 1
+                fi
+
+                if git push origin --tags &>/dev/null; then
+                    GitSuccess "Success: Tags pushed to origin."
+                    exit
+                else
+                    GitFailure "Error: Failed to push tags to origin."
+                    echo $(git push origin --tags)
+                    exit 1
+                fi
+            fi
+        ) &
+        loadingAnimation $! "Pushing tags"
+    )
 }
 function gitPull() {
     # Usage
@@ -213,15 +697,64 @@ function gitPull() {
 
     (
         (
-            git fetch origin $branch &>/dev/null
-            git pull origin $branch &>/dev/null
+            if git fetch origin $branch &>/dev/null && git pull origin $branch &>/dev/null; then
+                GitSuccess "Branch up to date."
+                exit
+            else
+                GitFailure "Error: Failed to pull."
+                echo $(git fetch origin $branch && git pull origin $branch)
+                exit 1
+            fi
         ) &
-        loadingAnimation $! "Updating branch \"$branch\""
+        loadingAnimation $! "Updating branch: $branch"
     )
 }
 
 function gwtn() {
-    branch=$1
+    local SKIP_INSTALL=false
+    local NO_OPEN=false
+    local MAKE=false
+    local DETACH=false
+    local existingBranch=false
+    local branch=""
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h | --help)
+                echo "gwtn (Git Worktree New) - Creates a new JV project worktree"
+                echo " "
+                echo "gwtn [branch] [options]"
+                echo " "
+                echo "options:"
+                echo "-h, --help                            show brief help"
+                echo "-s, --skip-install=SKIP_INSTALL       specify an action to use"
+                echo "-no, --noopen=NO_OPEN                 specify to open in VSCode"
+                echo "-m, --make=MAKE                       equivalent to calling gwtn -s -no"
+                echo "--detach=DETACH                       makes worktree, but no push to origin"
+                return
+                ;;
+            -s | --skip-install | --skip)
+                SKIP_INSTALL=true
+                shift
+                ;;
+            -no | --noopen)
+                NO_OPEN=true
+                shift
+                ;;
+            -m | --make)
+                MAKE=true
+                shift
+                ;;
+            --detach)
+                DETACH=true
+                shift
+                ;;
+            *)
+                branch=$1
+                shift
+                ;;
+        esac
+    done
 
     if [[ $branch != "" ]]; then
 
@@ -237,147 +770,137 @@ function gwtn() {
 
         trap 'echo && echo $(Alert $cWarning "Stopped creating worktree \"$branch\"\nCheck on what has been created so far") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
 
-        (
+        if ([[ $branch != 'starter_branch' ]] && git checkout starter_branch &>/dev/null); then
+            gitPull
+
             (
-                [[ $branch != 'starter_branch' ]] && git checkout starter_branch  &>/dev/null
+                (
+                    local new_wt_branch=
+                    local track_option=
+                    local b_option=
 
-                git fetch  &>/dev/null
-                git pull  &>/dev/null
+                    if git show-ref --quiet refs/remotes/origin/"$branch"; then
+                        existingBranch=true
+                        track_option="--track"
+                        b_option="-B $branch"
+                    else
+                        existingBranch=false
+                    fi
 
-                git show-ref --quiet refs/remotes/origin/$branch
-                if [[ $? == 0 ]]; then
-                    git worktree add --track -B $branch ./$branch origin/$branch  &>/dev/null
-                else
-                    git worktree add $branch  &>/dev/null
-                fi
+                    new_wt_branch="./$branch"
+                    if git worktree add $track_option $b_option "$new_wt_branch" &>/dev/null; then
+                        GitSuccess "Worktree added: $branch"
+                        git checkout root &>/dev/null
+                        cd "$branch/" &>/dev/null
+                        mkdir _dev &>/dev/null
+                        exit
+                    else
+                        GitFailure "Unable to create worktree"
+                        git checkout root &>/dev/null
+                        echo $(git worktree add $track_option $b_option "$new_wt_branch")
+                        exit 1
+                    fi
+                ) &
+                
+                loadingAnimation $! "Setting up worktree \"$branch\""
+            )
 
-                git checkout root  &>/dev/null
+            cd $ENV$branch &>/dev/null
 
-                cd $branch/
+            if ! $SKIP_INSTALL && ! $MAKE; then
+                start -i
+            fi
 
-                mkdir _dev
-            ) &
-            loadingAnimation $! "Setting up worktree \"$branch\""
-        )
+            if ! $DETACH; then
+                (
+                    (
+                        if $existingBranch; then
+                            if git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" &>/dev/null && git push --set-upstream origin $(git symbolic-ref --short HEAD) &>/dev/null; then
+                                GitSuccess "Branch created: $branch"
+                                exit
+                            else
+                                GitFailure "Unable to create branch: $branch"
+                                echo $(git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git")
+                                echo $(git push --set-upstream origin $(git symbolic-ref --short HEAD))
+                                exit 1
+                            fi
+                        else
+                            if git push origin $branch &>/dev/null; then
+                                GitSuccess "Branch linked to repo: $branch"
+                                exit
+                            else
+                                GitFailure "Unable to create branch: $branch"
+                                echo $(git push origin $branch)
+                                exit 1
+                            fi
+                        fi
+                    ) &
+                    loadingAnimation $! "Setting up in GitHub"
+                )
+            fi
 
-        start -i $branch
-
-        cd $ENV$branch &>/dev/null
-
-        (
-            (
-                if [[ $? == 0 ]]; then
-                    git push origin $branch &>/dev/null
-                else
-                    git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git"  &>/dev/null
-                    git push --set-upstream origin $(git symbolic-ref --short HEAD)  &>/dev/null
-                fi
-            ) &
-            loadingAnimation $! "Setting up in GitHub"
-        )
-
-        Alert $cSuccess "\"$branch\" created!\nOpening in VSCode"
-
-        code .
+            if ! $NO_OPEN && ! $MAKE; then
+                (
+                    (
+                        if code .; then
+                            exit
+                        else
+                            GitFailure "Error: Failed to open in VSCode."
+                            echo $(code .)
+                            exit 1
+                        fi
+                    ) &
+                    loadingAnimation $! "Opening in VSCode"
+                )
+            fi
+        else
+            GitFailure "Unable to checkout into starter_branch"
+            echo $(git checkout starter_branch)
+        fi
     else
         Error "Need a worktree name ( e.x. gwtn myworktree )"
         return
     fi
-
-    cd $ENV &>/dev/null
-}
-function gwtm() {
-    branch=$1
-
-    findEnv
-    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-        cd $ENV
-    fi
-    if [[ $branch != "" ]]; then
-
-        [ -d $ENV$branch ] && return
-
-        trap 'echo && echo $(Alert $cWarning "Stopped creating worktree \"$branch\"\nCheck on what has been created so far") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
-
-        (
-            (
-                [[ $branch != 'starter_branch' ]] && git checkout starter_branch  &>/dev/null
-
-                git fetch  &>/dev/null
-                git pull  &>/dev/null
-
-                if [ `git rev-parse --verify origin/$branch 2>/dev/null` ]; then
-                    Alert $cMessage "\"$branch\" already exists"
-                    git worktree add --track -B $branch ./$branch origin/$branch  &>/dev/null
-                    Alert $cSuccess "\"$branch\" added!"
-                else
-                    git worktree add $branch  &>/dev/null
-                fi
-
-                git checkout root  &>/dev/null
-                cd $branch/ &>/dev/null
-
-                mkdir _dev
-            ) &
-            loadingAnimation $! "Setting up worktree \"$branch\""
-        )
-
-        cd $ENV$branch &>/dev/null
-
-        (
-            (
-                if [ `git rev-parse --verify origin/$branch 2>/dev/null` ]; then
-                else
-                    git push origin $branch 2>/dev/null
-                    Alert $cSuccess "\"$branch\" created!"
-                fi
-            ) &
-            loadingAnimation $! "Setting up in GitHub"
-        )
-    else
-        Error "Need a worktree name ( e.x. gwtn myworktree )"
-        return
-    fi
-
-    - &>/dev/null
 }
 function gwtr() {
     trap 'echo && echo $(Alert $cWarning "Stopped removing worktree \"$branch\"\nCheck on what has been deleted") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
 
-    local branch=${1:-$(git symbolic-ref --short HEAD)}
-    local prune=${2:-false}
+    local branch=${1:=$(git symbolic-ref --short HEAD)}
 
-    if [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]]; then
-        Message "You can't use gwtr without a parameter in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr"
+    if [[ $branch != "root" ]] || [[ $branch != "starter_branch" ]]; then
+
+        if ! [ -d $ENV$branch ]; then
+            Alert "There is no existing $ENV$branch directory."
+            return
+        fi
+
+        findEnv
+        if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
+            cd $ENV &>/dev/null
+        fi
+
+        cd $ENV$branch &>/dev/null
+        git checkout . &>/dev/null
+
+        (
+            (
+                if git worktree remove $branch &>/dev/null; then
+                    GitSuccess "$branch has been removed."
+                    exit
+                else
+                    GitFailure "$branch was not removed."
+                    echo "$(git worktree remove $branch)"
+                    exit 1
+                fi
+            ) &
+            loadingAnimation $! "Removing worktree \"$branch\""
+        )
+    else
+        Error "You can't use gwtr without a parameter in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr"
         return
     fi
 
-    cd $ENV$branch &>/dev/null
-    git checkout . &>/dev/null
-
-    findEnv
-    if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-        cd $ENV/ &>/dev/null
-    fi
-
-    (
-        (
-            git worktree remove $branch &>/dev/null
-        ) &
-        loadingAnimation $! "Removing worktree \"$branch\""
-    )
-
-    Success "$branch has been removed."
-
-
-    if ${prune}; then
-        (
-            (
-                git worktree prune
-            ) &
-            loadingAnimation $! "Pruning..."
-        )
-    fi
+    cd - &>/dev/null
 }
 function gwtd() {
     local branch
@@ -403,20 +926,34 @@ function gwtd() {
 
     (
         (
-            git worktree remove $branch &>/dev/null
+            if git worktree remove $branch &>/dev/null; then
+                GitSuccess "Worktree \"$branch\" removed"
+                exit
+            else
+                GitFailure "Unable to remove worktree: $branch"
+                echo $(git worktree remove $branch)
+                exit 1
+            fi
         ) &
         loadingAnimation $! "Removing worktree \"$branch\""
     )
 
     (
         (
-            git branch -D $branch &>/dev/null
-            git push origin --delete $branch 2>/dev/null
+            if git branch -D $branch &>/dev/null && git push --no-verify origin --delete $branch &>/dev/null; then
+                GitSuccess "Branch \"$branch\" has been deleted."
+                exit
+            else
+                GitFailure "Unable to delete branch: $branch"
+                echo "git branch -D $branch: $(git branch -D $branch)"
+                echo "git push --no-verify origin --delete $branch: $(git push --no-verify origin --delete $branch)"
+                exit 1
+            fi
         ) &
         loadingAnimation $! "Deleting branch \"$branch\""
     )
 
-    Success "Branch \"$branch\" has been deleted."
+    cd - &>/dev/null
 }
 function tagging() {
     if [[ $1 == "" ]]; then
@@ -454,8 +991,8 @@ function start() {
 
     local dir=''
     
-    SKIP_INSTALL=false
-    INSTALL_ONLY=false
+    local SKIP_INSTALL=false
+    local INSTALL_ONLY=false
 
     while [ $# -gt 0 ]; do
         case $1 in
@@ -489,12 +1026,17 @@ function start() {
         if ! $SKIP_INSTALL; then
             (
                 (
-                    npm install &>/dev/null
+                    if npm install &>/dev/null; then
+                        GitSuccess "Kickoff installed"
+                        exit
+                    else
+                        GitFailure "Kickoff not able to be installed"
+                        echo $(npm install)
+                        exit 1
+                    fi
                 ) &
                 loadingAnimation $! "Installing NPM and stuff in $dir. This may take up to a few minutes."
             )
-
-            Success " √ Kickoff installed"
         else
             echo
         fi
@@ -564,11 +1106,24 @@ function addStyles() {
 
     (
         (
-            git init &> /dev/null
-            git remote add kickoff git@github.com:jobvite-github/Kickoff.git &> /dev/null
-            git fetch kickoff &> /dev/null
-            git checkout kickoff/master &> /dev/null
-            rm -rf .git
+            (
+                git init &>/dev/null
+                git remote add kickoff git@github.com:jobvite-github/Kickoff.git &>/dev/null
+                git fetch kickoff &>/dev/null
+                git checkout kickoff/master &>/dev/null
+                rm -rf .git &>/dev/null
+            ) && (
+                GitSuccess "Kickoff added"
+                exit
+            ) || (
+                GitFailure "Failed to add Kickoff"
+                echo $(git init)
+                echo $(git remote add kickoff git@github.com:jobvite-github/Kickoff.git)
+                echo $(git fetch kickoff)
+                echo $(git checkout kickoff/master)
+                echo $(rm -rf .git)
+                exit 1
+            )
         ) &
         loadingAnimation $! "Adding Kickoff"
     )
@@ -579,11 +1134,18 @@ function addStyles() {
     dir=''
     findPackageJSON $@
     (
-        npm install &>/dev/null
-    ) &
-    loadingAnimation $! "Installing Kickoff"
-
-    Success "Kickoff added to $dir"
+        (
+            if npm install &>/dev/null; then
+                GitSuccess "Kickoff added to $dir"
+                exit
+            else
+                GitFailure "Failed install Kickoff"
+                echo $(npm install)
+                exit 1
+            fi
+        ) &
+        loadingAnimation $! "Installing Kickoff"
+    )
 
     trap - 1 2 3 6
 }
@@ -700,8 +1262,8 @@ function repairWorktree() {
         ref=${2:-$(git symbolic-ref --short HEAD)}
     else
         ref=${1:-$(git symbolic-ref --short HEAD)}
-        Warning 'No worktree referenced' $cEnd
-        read REPLY"?$(Color -m 'What worktree do you want to repair? (enter nothing to skip)'$cEnd -ub): "
+        Warning 'No worktree referenced' 
+        read REPLY"?$(Color -m 'What worktree do you want to repair? (enter nothing to skip)' -ub): "
 
         case $REPLY in
             *)
@@ -766,7 +1328,6 @@ function repairWorktree() {
 }
 
 alias add='git add'
-# alias addStyles='mkdir styles && ./styles && git init && git remote add kickoff https://github.com/jobvite-github/Kickoff.git && git fetch kickoff && git checkout kickoff/master && rm -rf .git'
 alias back='git reset HEAD~1'
 alias bset='git branch --set-upstream-to=origin/$(git symbolic-ref --short HEAD) $(git symbolic-ref --short HEAD)'
 alias branch='git branch'
@@ -790,6 +1351,7 @@ alias grs='git reset'
 alias grsurl='git remote set-url origin'
 alias grv='git remote -v'
 alias gwt='git worktree'
+alias gwtm='gwtn --make $1'
 alias gwts='git worktree add $1 $1'
 alias gwta='git worktree add'
 alias gwtl='git worktree list'
@@ -859,7 +1421,7 @@ function getdev() {
     cd _dev/
 
     Message "Connecting to FileZilla and downloading the dev folder for $branch"
-    echo "When prompted for your password, you can type in your password OR, if you have your \$FZUSER and \$FZPWD set in your aliases global variables, just paste as I've just copied that for you." $cEnd
+    echo "When prompted for your password, you can type in your password OR, if you have your \$FZUSER and \$FZPWD set in your aliases global variables, just paste as I've just copied that for you." 
     echo
 
 echo $FZPWD | pbcopy && sftp -r $FZUSER@sftp.jobvite.com:/uploads/$branch << EOF
@@ -906,237 +1468,6 @@ alias djs='build --deploy -task --js'
 alias zipit='zip -er $1.zip $2'
 
 # End Aliases / Functions
-#============================================================
-
-
-#============================================================
-# tput Text Formatting
-#============================================================
-
-#- Colors
-Black='#000000'
-Gray='#D0CFD0'
-DarkGray='#202020'
-White='#FFFFFF'
-Red='#C8334D'
-Orange='#FEA42F'
-Yellow='#C7C748'
-Green='#43CC63'
-Teal='#8AFFC8'
-Blue='#88D1FE'
-DarkBlue='#4DACFF'
-Dark='#615340'
-
-cSuccess=$Green
-cWarning=$Orange
-cError=$Red
-cMessage=$Blue
-cEnd=$(tput sgr0)
-
-ALERTWIDTH=
-
-#Set columns for alert width
-function setAlertWidth() {
-    if [ $(tput cols) -ge 150 ]; then
-        ALERTWIDTH=150
-    else
-        ALERTWIDTH=$(tput cols)
-    fi
-}
-
-#- Coloring Functions
-function Success() {
-    echo -e $(Color -c $cSuccess -m $1 -b)
-}
-function Warning() {
-    echo -e $(Color -c $cWarning -m $1 -b)
-}
-function Error() {
-    echo -e $(Color -c $cError -m $1 -b)
-}
-function Message() {
-    echo -e $(Color -c $cMessage -m $1)
-}
-function Color() {
-    # Usage: Color  [ -m Message <required> ] [ -c Color <required> ]
-    #               [ -n normal <optional> ] [ -b bold <optional> ] [ -u underline <optional> ]
-    local STR COLOR NORMAL BOLD UNDERLINE
-    while getopts 'm:c:nbu' flag
-    do
-        case $flag in
-            m) STR=$OPTARG;;
-            c) COLOR=$OPTARG;;
-            n) NORMAL='normal';;
-            b) BOLD='bold';;
-            u) UNDERLINE='underline';;
-        esac
-    done
-
-    if [ $OPTIND -eq 1 ]; then
-        if [[ $2 != '' ]]; then
-            COLOR=$1
-            STR=$2
-        else
-            STR=$1
-        fi
-    fi
-    shift $((OPTIND-1))
-
-    echo -e $(formatText $NORMAL $BOLD $UNDERLINE "$(colorText ${COLOR:-$Blue} $STR)")
-}
-function Highlight() {
-    # $1: highlight color <required>
-    # $2: text content <required>
-    # $3: spacing character <optional>
-    res=''
-    echo -e "$(tput setab $(fromHex $1))$res$2$cEnd"
-}
-
-#- Formatting Functions
-function Alert() {
-    txt_color=$Black;
-    color=$cWarning;
-    space=''
-    str=''
-
-    setParams $@
-
-    echo -e $(Color $txt_color "$(HighlightLine $color $str)")
-}
-function Prompt() {
-    REPLY=''
-    color=$Teal;
-    str=''
-
-    setParams $@
-
-    read $str REPLY
-
-    return $REPLY
-}
-function PromptYN() {
-    local str=$1
-    confirm=$2
-    deny=$3
-
-    read $str REPLY
-
-    case $REPLY in [yY][eE][sS]|[yY]|[jJ]|'')
-
-        echo
-        echo 'Okay. Will do!'
-        $confirm
-        return true
-        ;;
-        *)
-        echo
-        echo 'Okay. I will pass on that for now.'
-        $deny
-        return false
-        ;;
-    esac
-}
-function setParams() {
-    if [[ $3 != "" ]]; then
-        txt_color=$1
-        color=$2
-        str=$3
-    elif [[ $2 != "" ]]; then
-        color=$1
-        str=$2
-    else
-        str=$1
-    fi
-}
-function setString() {
-    setAlertWidth
-
-    space=''
-    delimeter=${1:-' '}
-
-    if [[ $delimeter == " " ]]; then
-        for (( i = 1; i <= ($ALERTWIDTH-${#str}-1); i += 1 )); do
-            space=$space$delimeter
-        done
-        str="$str$space"
-    else
-        for (( i = 1; i <= ($ALERTWIDTH-${#str}-1) / 2; i += 1 )); do
-            space=$space$delimeter
-        done
-        str="$space$str$space "
-    fi
-}
-function formatText() {
-    res=''
-    for (( i = 1; i < $#; i += 1 )); do
-        if [[ $@[$i] == 'normal' ]]; then
-            res=$res"$(tput sgr0)"
-        elif [[ $@[$i] == 'bold' ]]; then
-            res=$res"$(tput bold)"
-        elif [[ $@[$i] == 'underline' ]]; then
-            res=$res"$(tput smul)"
-        elif [[ $@[$i] == 'nounderline' ]]; then
-            res=$res"$(tput rmul)"
-        fi
-    done
-
-    res=$res$@[$#]
-
-    endFormatting
-}
-function colorText() {
-    # two required arguments, one optional argument for color
-    # $1: text color <required>
-    # $2: text content <required>
-
-    res=''
-
-    res=$res$(tput setaf $(fromHex $1))
-    res=$res${@:2}
-
-    endFormatting
-}
-function HighlightLine() {
-    # $1: highlight color <required>
-    # $2: text content <required>
-    color=${1-null}
-
-    res=''
-
-    if [[ color ]]; then
-        str=$2
-        setString ${3-'-'}
-        res=$res
-    else
-        str=$1
-        setString ${2-'-'}
-        res=$res
-    fi
-    res="$(tput setab $(fromHex $1))$res $str"
-
-    endFormatting
-}
-function fromHex() {
-    # fromHex: https://gist.github.com/mhulse/b11e568260fb8c3aa2a8
-    hex=$1
-    if [[ $hex == "#"* ]]; then
-        isHex=true
-        hex=$(echo $1 | awk '{print substr($0,2)}')
-    fi
-    r=$(printf '0x%0.2s' "$hex")
-    g=$(printf '0x%0.2s' ${hex#??})
-    b=$(printf '0x%0.2s' ${hex#????})
-    rgb=$(((r<75?0:(r-35)/40)*6*6+(g<75?0:(g-35)/40)*6+(b<75?0:(b-35)/40)+16))
-
-    echo -e ${rgb:0}
-}
-function endFormatting() {
-    # if [[ $(contains $@[$#] $cEnd) ]] || res=$res$cEnd
-
-    echo -e $res
-}
-
-# End tput Text Formatting
 #============================================================
 
 #-------------------------------------------------------------
@@ -1202,164 +1533,3 @@ alias vf='cd'
 alias moer='more'
 alias moew='more'
 alias kk='ll'
-
-#-------------------------------------------------------------
-# Find Helpers
-#-------------------------------------------------------------
-function fn() {
-    if [[ $3 != "" ]]; then
-        find $1 -name "$2" -prune -maxdepth $3
-    elif [[ $2 != "" ]]; then
-        find $1 -name "$2" -prune -maxdepth 1
-    elif [[ $1 != "" ]]; then
-        find . -name "$1" -prune -maxdepth 1
-    else
-        Message 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
-    fi
-}
-function fnd() {
-    if [[ $3 != "" ]]; then
-        find $1 -name "$2" -type d -prune -maxdepth $3
-    elif [[ $2 != "" ]]; then
-        find $1 -name "$2" -type d -prune -maxdepth 1
-    elif [[ $1 != "" ]]; then
-        find . -name "$1" -type d -prune -maxdepth 1
-    else
-        Message 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
-    fi
-}
-function contains() { case "$1" in *"$2"*) true ;; *) false ;; esac }
-#-------------------------------------------------------------
-
-#============================================================
-#
-#= Animations
-#
-#============================================================
-
-
-function patience() {
-    local ID=${1-$!}
-    MSG=${2-'Please be patient. Doing a lot of work over here...'}
-    loadingAnimation $ID $MSG
-}
-
-function animationTest() {
-    MSG=${1-'Testing with a medium length message.'}
-
-    (
-        ( sleep 2 ) &
-
-        patience $! $MSG
-    )
-
-    (
-        ( sleep 2 ) &
-
-        patience $! "I'm sorry. I love you."
-    )
-}
-
-#!/bin/bash
-# Shows a spinner while another command is running. Randomly picks one of 12 spinner styles.
-# @args command to run (with any parameters) while showing a spinner.
-#       E.g. ‹spinner sleep 10›
-
-function shutdown() {
-    tput cnorm
-}
-
-function loadingAnimation() {
-    # make sure we use non-unicode character type locale
-    # (that way it works for any locale as long as the font supports the characters)
-    local LC_CTYPE=C
-
-    local pid=$1 # Process Id of the previous running command
-
-    case $(($RANDOM % 15)) in
-    0)
-        local spin='⠁⠂⠄⡀⢀⠠⠐⠈'
-        local charwidth=3
-        ;;
-    1)
-        local spin='-\|/'
-        local charwidth=1
-        ;;
-    2)
-        local spin="▁▂▃▄▅▆▇█▇▆▅▄▃▂▁"
-        local charwidth=3
-        ;;
-    3)
-        local spin="▉▊▋▌▍▎▏▎▍▌▋▊▉"
-        local charwidth=3
-        ;;
-    4)
-        local spin='←↖↑↗→↘↓↙'
-        local charwidth=3
-        ;;
-    5)
-        local spin='▖▘▝▗'
-        local charwidth=3
-        ;;
-    6)
-        local spin='┤┘┴└├┌┬┐'
-        local charwidth=3
-        ;;
-    7)
-        local spin='◢◣◤◥'
-        local charwidth=3
-        ;;
-    8)
-        local spin='◰◳◲◱'
-        local charwidth=3
-        ;;
-    9)
-        local spin='◴◷◶◵'
-        local charwidth=3
-        ;;
-    10)
-        local spin='◐◓◑◒'
-        local charwidth=3
-        ;;
-    11)
-        local spin='⣾⣽⣻⢿⡿⣟⣯⣷'
-        local charwidth=3
-        ;;
-    12)
-        local spin='.  .. ...'
-        local charwidth=3
-        ;;
-    13)
-        local spin="🕛🕧🕐🕜🕑🕝🕒🕞🕓🕟🕔🕠🕕🕡🕖🕢🕗🕣🕘🕤🕙🕥🕚🕦"
-        local charwidth=4
-        ;;
-    14)
-        local spin="🌑🌒🌓🌔🌕🌖🌗🌘"
-        local charwidth=4
-        ;;
-    esac
-
-    local i=0
-    str=$2
-    tput civis # cursor invisible
-    while kill -0 $pid &>/dev/null; do
-        local i=$(((i + $charwidth) % ${#spin}))
-
-        if [[ $str != "" ]]; then
-            echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) $(rev<<<${spin:$i:$charwidth}) $str ${spin:$i:$charwidth} $(tput sgr0)"
-        else
-            echo -en "$(tput bold)$(tput setaf $(fromHex ${3=$Yellow})) Please wait  Loading ${spin:$i:$charwidth} $(tput sgr0)"
-        fi
-
-        echo -en "\033[$1D"
-        sleep .16
-    done
-
-    wait $pid # capture exit code
-
-    echo "$(tput cnorm)"
-
-    return $?
-}
-
-#============================================================

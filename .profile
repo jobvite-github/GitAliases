@@ -21,22 +21,6 @@ FZPWD=''    # FileZilla Password
 #-------------------------------------------------------------
 alias config='code ~/.profile && echo $(Highlight $cWarning " Editing ~/.profile ")$(tput cnorm)'
 alias reload='source ~/.profile && echo $(Highlight $cSuccess " .profile Reloaded ")$(tput cnorm)'
-function updateAliases() {
-    read res"?$(Color -m 'This will overwrite your .profile. Are you sure you want to continue? [y/n]' -ub): "
-    case $res in
-        [yY])
-            (
-                (
-                    curl -s https://raw.githubusercontent.com/brettwbyron/GitAliases/main/.profile > ~/.profile && reload
-                ) &
-                loadingAnimation $! "Updating .profile"
-            )
-        ;;
-        *)
-            return
-        ;;
-    esac
-}
 
 #============================================================
 #= Global Variables
@@ -62,7 +46,11 @@ function findEnv() {
         ENV=$TLPATH
         ENVTYPE='tl'
     elif [ $step -ge 0 ] && [[ $step > 5 ]]; then
-        ENV=$PWD/
+        if [ -d .git ]; then
+            ENV=$PWD/
+        else
+            ENV=$JVPATH
+        fi
     else
         ((step++))
         findEnv $(dirname $dir) $step
@@ -772,23 +760,13 @@ function gwtn() {
 
         if ([[ $branch != 'starter_branch' ]] && git checkout starter_branch &>/dev/null); then
             gitPull
+        fi
 
+        (
             (
-                (
-                    local new_wt_branch=
-                    local track_option=
-                    local b_option=
-
-                    if git show-ref --quiet refs/remotes/origin/"$branch"; then
-                        existingBranch=true
-                        track_option="--track"
-                        b_option="-B $branch"
-                    else
-                        existingBranch=false
-                    fi
-
-                    new_wt_branch="./$branch"
-                    if git worktree add $track_option $b_option "$new_wt_branch" &>/dev/null; then
+                if git show-ref --quiet refs/remotes/origin/"$branch"; then
+                    existingBranch=true
+                    if git worktree add --track -B $branch ./$branch origin/$branch &>/dev/null; then
                         GitSuccess "Worktree added: $branch"
                         git checkout root &>/dev/null
                         cd "$branch/" &>/dev/null
@@ -797,65 +775,76 @@ function gwtn() {
                     else
                         GitFailure "Unable to create worktree"
                         git checkout root &>/dev/null
-                        echo $(git worktree add $track_option $b_option "$new_wt_branch")
+                        echo $(git worktree add --track -B $branch ./$branch origin/$branch)
+                        exit 1
+                    fi
+                else
+                    existingBranch=false
+                    if git worktree add $branch &>/dev/null; then
+                        GitSuccess "Worktree added: $branch"
+                        git checkout root &>/dev/null
+                        cd "$branch/" &>/dev/null
+                        mkdir _dev &>/dev/null
+                        exit
+                    else
+                        GitFailure "Unable to create worktree"
+                        git checkout root &>/dev/null
+                        echo $(git worktree add $branch)
+                        exit 1
+                    fi
+                fi
+            ) &
+            
+            loadingAnimation $! "Setting up worktree \"$branch\""
+        )
+
+        cd $ENV$branch &>/dev/null
+
+        if ! $SKIP_INSTALL && ! $MAKE; then
+            start -i
+        fi
+
+        if ! $DETACH && ! $MAKE; then
+            (
+                (
+                    if $existingBranch; then
+                        if git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" &>/dev/null && git push --set-upstream origin $(git symbolic-ref --short HEAD) &>/dev/null; then
+                            GitSuccess "Branch created: $branch"
+                            exit
+                        else
+                            GitFailure "Unable to create branch: $branch"
+                            echo $(git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git")
+                            echo $(git push --set-upstream origin $(git symbolic-ref --short HEAD))
+                            exit 1
+                        fi
+                    else
+                        if git push origin $branch &>/dev/null; then
+                            GitSuccess "Branch linked to repo: $branch"
+                            exit
+                        else
+                            GitFailure "Unable to create branch: $branch"
+                            echo $(git push origin $branch)
+                            exit 1
+                        fi
+                    fi
+                ) &
+                loadingAnimation $! "Setting up in GitHub"
+            )
+        fi
+
+        if ! $NO_OPEN && ! $MAKE; then
+            (
+                (
+                    if code .; then
+                        exit
+                    else
+                        GitFailure "Error: Failed to open in VSCode."
+                        echo $(code .)
                         exit 1
                     fi
                 ) &
-                
-                loadingAnimation $! "Setting up worktree \"$branch\""
+                loadingAnimation $! "Opening in VSCode"
             )
-
-            cd $ENV$branch &>/dev/null
-
-            if ! $SKIP_INSTALL && ! $MAKE; then
-                start -i
-            fi
-
-            if ! $DETACH; then
-                (
-                    (
-                        if $existingBranch; then
-                            if git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" &>/dev/null && git push --set-upstream origin $(git symbolic-ref --short HEAD) &>/dev/null; then
-                                GitSuccess "Branch created: $branch"
-                                exit
-                            else
-                                GitFailure "Unable to create branch: $branch"
-                                echo $(git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git")
-                                echo $(git push --set-upstream origin $(git symbolic-ref --short HEAD))
-                                exit 1
-                            fi
-                        else
-                            if git push origin $branch &>/dev/null; then
-                                GitSuccess "Branch linked to repo: $branch"
-                                exit
-                            else
-                                GitFailure "Unable to create branch: $branch"
-                                echo $(git push origin $branch)
-                                exit 1
-                            fi
-                        fi
-                    ) &
-                    loadingAnimation $! "Setting up in GitHub"
-                )
-            fi
-
-            if ! $NO_OPEN && ! $MAKE; then
-                (
-                    (
-                        if code .; then
-                            exit
-                        else
-                            GitFailure "Error: Failed to open in VSCode."
-                            echo $(code .)
-                            exit 1
-                        fi
-                    ) &
-                    loadingAnimation $! "Opening in VSCode"
-                )
-            fi
-        else
-            GitFailure "Unable to checkout into starter_branch"
-            echo $(git checkout starter_branch)
         fi
     else
         Error "Need a worktree name ( e.x. gwtn myworktree )"

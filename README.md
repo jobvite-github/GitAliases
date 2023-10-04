@@ -1,6 +1,23 @@
-# Git Alias / Function Documentation
+# Git Aliases Documentation
 
-To get started, you will need to add the code in the [.profile](./.profile) file to your `.profile` file in your User directory ( `~/` ).
+## Table of Contents
+- [Introduction](#introduction)
+- [Getting Started](#getting-started)
+- [Installing](#installing)
+- [Updating aliases](#updating-aliases)
+- [Functions](#functions)
+#
+
+<br>
+
+# Introduction
+
+A bunch of helpful aliases for the Jobvite workflow. Most of the important functions are listed below. Take a look!
+
+<br>
+# Getting Started
+
+To get started, you will need to add the code in the [.profile](./.profile) file to your `.profile` file in your User directory ( `~/` ) ( `~/` ).
 
 Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, add in the following line to the end of that file:
 
@@ -8,7 +25,30 @@ Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on whi
 source ~/.profile
 ```
 
-## Installing aliases
+<br>
+
+# Installing
+1 In your terminal, run the following code to open up your `.profile` in VSCode:
+
+```sh
+code ~/.profile
+```
+
+Replace all, if any, content with the [.profile](./.profile) code in this repo.
+
+After you put the latest code in your `.profile`, make sure you update the `JVPATH` variable to reflect the path to your JV CWS folder.
+
+If your CWS folder is in your User Directory ( `~/` ), for example, you would make `JVPATH` equal `~/CWS/`.
+
+2 Save your file, then run:
+
+```sh
+source ~/.profile
+```
+
+<br>
+
+# Updating aliases
 1 In your terminal, run:
 
 ```sh
@@ -19,7 +59,7 @@ to open up your `.profile`, and replace what you have with the code in the `.pro
 
 After you put the latest code in your `.profile`, make sure you update the `JVPATH` variable to reflect the path to your CWS folder.
 
-If your CWS folder is in your User Directory, for example, you would change `JVPATH` from `~/Jobvite/CWS` to `~/CWS`.
+If your CWS folder is in your User Directory ( `~/` ), for example, you would make `JVPATH` equal `~/CWS/`.
 
 2 Save your file, then open a new Shell, or run:
 
@@ -27,60 +67,31 @@ If your CWS folder is in your User Directory, for example, you would change `JVP
 reload
 ```
 
-## Updating aliases
-In your terminal, run:
+<br><br>
 
-```sh
-updateAliases
-```
-
-enter your username and password if prompted
-
-## Update (Jan 5 2023)
-
-<h3><b>Functions</b></h3>
+## Functions
 
 <details id="addStyles">
     <summary><code>addStyles()</code></summary>
 
-    This is the same function as `addKick`, just with some extra functionality for potential future use cases.
 <br>
 
-</details>
-
-<h3><b>Formatting / Animations</b></h3>
-
-<details id="formattingUpdate010523">
-    You'll notice fancy new loading animations during long processes, and updated message formatting.
-</details>
-
-Check the diff of the latest commit to see all changes.
-
-## Update (June 29 2022)
-
-<h3><b>Functions</b></h3>
-
-<details id="addkick">
-    <summary><code>addkick()</code></summary>
-
-<br>
-
-**Add Kickoff**
+**Add Styles**
 
 Using this function will allow you to get the latest Kickoff code into any project.
-You can specify where you would like to put it by adding in the path after `addkick`, or you can go to that location in your terminal and run `addkick`.
+You can specify where you would like to put it by adding in the path after `addStyles`, or you can go to that location in your terminal and run `addStyles`.
 
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| branch_name | Name of directory to store kickoff. If empty, uses current directory. | x |
+| branch_name | Name of directory to store kickoff. If empty, uses current directory. | ✓ |
 
 Examples:
 
 ```sh
-git:(<branch_name>) $ addkick
+git:(<branch_name>) $ addStyles
 
-git:(<branch_name>) $ addkick ./myfolder
+git:(<branch_name>) $ addStyles ./myfolder
 ```
 </details>
 <details id="camp">
@@ -97,12 +108,12 @@ This function combines the steps of adding, committing and pushing. It also allo
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. Technically optional, but not recommended to exclude |  |
-| -t | Flag for adding a tag | x |
-| tag | Value for tag (i.e., v1.0) | x |
-| tag_msg | Message for tag | x |
-| branch_name | Name of project. If empty, uses current directory. | x |
-| -f | Flag for a force push | x |
+| commit_msg | Message for commit. Technically optional, but not recommended to exclude | x |
+| -t | Flag for adding a tag | ✓ |
+| tag | Value for tag (i.e., v1.0) | ✓ |
+| tag_msg | Message for tag | ✓ |
+| branch_name | Name of project. If empty, uses current directory. | ✓ |
+| -f | Flag for a force push | ✓ |
 
 Examples:
 
@@ -128,7 +139,7 @@ Use this function to commit and push already staged files. If no files are stage
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. |  |
+| commit_msg | Message for commit. | x |
 
 Example:
 
@@ -144,41 +155,46 @@ git:(<branch_name>) $ cmp <commit_msg>
 
 **Git Worktree New**
 
-For adding a new worktree. This function will create the worktree based on the latest, if any, existing GitHub code, installs npm, and does an initial push of the branch if it isn't already set up. Once you run this command, you will be ready to work on this worktree. This will work both existing and non-existing branches.
+`gwtn` is used to create a new worktree for a Git project. It accepts several options and a  `branch`  argument.
+
+For adding a new worktree. This function will create the worktree based on the latest, if any, existing GitHub code, installs npm, and does an initial push of the branch if it isn't already set up. Once you run this command, you will be ready to work on this worktree. This will work with both existing and non-existing branches.
 
 Arguments:
-| Name | Function | Optional |
-| ---- | -------- | :------: |
-| branch_name | Name of branch/project. |  |
+| Name | Function | Required | Optional |
+| ---- | -------- | :------: | :------: |
+| `branch_name` | Name of branch/project. | ✓ |
+| `-h`  or  `--help` | Displays a brief help message explaining the usage and options of the function. |  | ✓ |
+| `-s`  or  `--skip-install`  or  `--skip` | Specifies that the installation step should be skipped. |  | ✓ |
+| `-no`  or  `--noopen` | Specifies that the worktree should not be opened in VSCode. |  | ✓ |
+| `-m`  or  `--make` | Equivalent to calling  `gwtn -s -no` , which skips installation and opening in VSCode. |  | ✓ |
+| `--detach` | Creates the local worktree without creating the branch in the origin repository. |  | ✓ |
 
 Examples:
 
 ```sh
-git:(root) $ gwtn <branch_name>
+# create a new worktree named "mybranch"
+gwtn mybranch
+
+# displays a brief help message explaining the usage and options
+gwtn -h
+
+# create a new worktree named "mybranch" and skip npm installation without creating the branch in the origin repository. 
+gwtn mybranch -s --detach
+
+# create a new worktree named "mybranch" without opening the project in VSCode
+gwtn mybranch -no
+
+#create a new worktree named "mybranch" with the options to skip installation and not open it in VSCode.
+gwtn mybranch -s --noopen
+
+# create a new worktree named "mybranch" and skips both the installation step and opening it in VSCode.
+gwtn mybranch -m
+# It is equivalent to
+gwtn mybranch --skip-install --noopen
 ```
 
 </details>
-<details id="gwtm">
-    <summary><code>gwtm()</code></summary>
 
-<br>
-
-**Git Worktree Make**
-
-For adding a new worktree, but not running `npm i`. This function will create the worktree based on the latest, if any, existing GitHub code, and does an initial push of the branch if it isn't already set up. Once you run this command, you will be ready to work on this worktree. This will work both existing and non-existing branches.
-
-Arguments:
-| Name | Function | Optional |
-| ---- | -------- | :------: |
-| branch_name | Name of project. If empty, uses current directory. | x |
-
-Examples:
-
-```sh
-git:(root) $ gwtm <branch_name>
-```
-
-</details>
 <details id="gwtr">
     <summary><code>gwtr()</code></summary>
 
@@ -192,8 +208,8 @@ Arguments:
 
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| -d | Flag to include deleting the branch | x |
-| branch_name | Name of branch. If empty, uses current branch. | x |
+| -d | Flag to include deleting the branch | ✓ |
+| branch_name | Name of branch. If empty, uses current branch. | ✓ |
 
 Examples:
 
@@ -235,21 +251,28 @@ git:(<branch_name>) $ new
 
 **Start Kickoff**
 
-Running this function will run `gulp` in the styles folder of your current branch. If it can't find a "style" or "styles" folder anywhere in the project, this will not run.
+Running this function will find the nearest folder with npm in your current branch, install `npm`, and run `gulp`.
 
-You can specify the location to run gulp by adding it after `start`
 
 Arguments:
-| Name | Function | Optional |
-| ---- | -------- | :------: |
-| folder_name | Name of folder enclosing Kickoff ( most commonly `styles/` ). | x |
+
+| Name | Function | Required | Optional |
+| ---- | -------- | :------: | :------: |
+| `-i`  or  `--install-only` | Installs npm in the nearest folder possible |  | ✓ |
+| `-s`  or  `--skip-install` | Runs `gulp` in the nearest folder possible |  | ✓ |
+| `-d folder_name` or `folder_name` | Specifies a directory to run the commands |  | ✓ |
 
 Examples:
 
 ```sh
-git:(<branch_name>) $ start
+#install npm in your project's styling
+start -i
 
-git:(<branch_name>) $ start myfolder/styling
+#run gulp in your project's styling
+start -s
+
+#install npm in a specified folder
+start -i folder_name
 ```
 
 </details>
@@ -267,7 +290,7 @@ You can specify how many results you want to see by adding `-number` after `stat
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| -# | Number of commits to view. Defaults to `-50` | x |
+| -# | Number of commits to view. Defaults to `-50` | ✓ |
 
 Examples:
 
@@ -353,7 +376,7 @@ Using this will add and commit, with a message, all the untracked files in your 
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. |  |
+| commit_msg | Message for commit. | x |
 
 Example:
 
@@ -416,7 +439,7 @@ Equivalent to [`git commit`](https://git-scm.com/docs/git-commit)
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| commit_msg | Message for commit. |  |
+| commit_msg | Message for commit. | x |
 
 Example:
 
@@ -541,7 +564,7 @@ Very similarly to [stats](#stats), you can specify how many commits you would li
 Arguments:
 | Name | Function | Optional |
 | ---- | -------- | :------: |
-| -# | Number of commits to show. Defaults to `-20` | x |
+| -# | Number of commits to show. Defaults to `-20` | ✓ |
 
 Examples:
 

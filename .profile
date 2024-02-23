@@ -21,8 +21,8 @@ FZPWD=''        # FileZilla Password
 
 # Load / Edit / Update .profile
 #-------------------------------------------------------------
-alias config='code ~/.profile && echo $(Highlight $cWarning " Editing ~/.profile ")$(tput cnorm)'
-alias reload='source ~/.profile && echo $(Highlight $cSuccess " .profile Reloaded ")$(tput cnorm)'
+alias config='code ~/.profile && Highlight $cWarning " Editing ~/.profile $(tput cnorm)"'
+alias reload='source ~/.profile && Highlight $cSuccess " .profile Reloaded $(tput cnorm)"'
 
 #============================================================
 #= Global Variables
@@ -90,32 +90,29 @@ function fnd() {
 	fi
 }
 function contains() { case "$1" in *"$2"*) true ;; *) false ;; esac }
-# Function to rename the current directory
 function renameCurrentDirectory() {
-	local newDirName=$1
-	local currentDir=$(pwd)
-
-	# Check if the new directory name is not empty
-	if [ -z "$newDirName" ]; then
-		echo "New directory name cannot be empty."
-		return
-	fi
+	local new_dir_name="$1"
 
 	# Check if the new directory name is valid
-	if [[ "$newDirName" == *[/\ ]* ]]; then
-		echo "New directory name should not contain spaces or special characters."
-		return
+	if [[ ! "$new_dir_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+		Error "Invalid directory name. Please use only alphanumeric characters, hyphens, and underscores."
+		return 1
 	fi
 
 	# Rename the current directory
-	if ! mv "$currentDir" "$(dirname "$currentDir")/$newDirName"; then
-		echo "Failed to rename the current directory."
-		return
+	local current_dir=$(pwd)
+	local parent_dir=$(dirname "$current_dir")
+	local new_dir_path="$parent_dir/$new_dir_name"
+
+	if ! mv "$current_dir" "$new_dir_path"; then
+		Error "Failed to rename the directory."
+		return 1
 	fi
 
-	echo "Current directory renamed to: $newDirName"
+	# Change to the renamed directory
+	cd "$new_dir_path"
 }
-#-------------------------------------------------------------
+#------------------------------------------------------------
 
 #============================================================
 # Text Formatting (tput)
@@ -152,6 +149,7 @@ Dark=${colors[Dark]}
 cSuccess=${colors[Green]}
 cWarning=${colors[Orange]}
 cError=${colors[Red]}
+cCaution=${colors[Yellow]}
 cMessage=${colors[Blue]}
 
 function hexToColor() {
@@ -210,6 +208,21 @@ function formatText() {
 	
 	echo -e $str$(tput sgr0)
 }
+function adjustToTerminalWidth() {
+	local string="$1"
+	local terminal_width=$(tput cols)
+
+	if [[ ${#string} -gt $terminal_width ]]; then
+		local truncated_string="${string:0:$((terminal_width - 3))}..."
+		echo "$truncated_string"
+	elif [[ ${#string} -lt $terminal_width ]]; then
+		local padding_length=$((terminal_width - ${#string}))
+		local padding=$(printf '%*s' "$padding_length" '')
+		echo "${string}${padding}"
+	else
+		echo "$string"
+	fi
+}
 function colorText() {
 	local color=${1:=$Yellow}
 	local output="${2:=""}"
@@ -220,9 +233,9 @@ function colorText() {
 }
 function Color() {
 	# Usage: Color  [ -m Message <required> ] [ -c Color <required> ]
-	#               [ -n normal <optional> ] [ -b bold <optional> ] [ -u underline <optional> ]
-	local STR COLOR NORMAL BOLD UNDERLINE
-	while getopts 'm:c:nbu' flag
+	#               [ -n normal <optional> ] [ -b bold <optional> ] [ -u underline <optional> ] [ -f limit to terminal window width <optional> ]
+	local STR COLOR NORMAL BOLD UNDERLINE FULLWIDTH=false OUTPUT
+	while getopts 'm:c:nbuf' flag
 	do
 		case $flag in
 			m) STR=$OPTARG;;
@@ -230,6 +243,7 @@ function Color() {
 			n) NORMAL='normal';;
 			b) BOLD='bold';;
 			u) UNDERLINE='underline';;
+			f) FULLWIDTH=true;;
 		esac
 	done
 
@@ -243,7 +257,17 @@ function Color() {
 	fi
 	shift $((OPTIND-1))
 
-	echo -e $(formatText $NORMAL $BOLD $UNDERLINE "$(colorText ${COLOR:-$Blue} $STR)")
+	if $FULLWIDTH; then
+		local output_length=${#STR}
+		local terminal_width=$(tput cols)
+
+		# Adjust the output based on terminal width
+		OUTPUT=$(adjustToTerminalWidth "$STR")
+	else
+		OUTPUT=$STR
+	fi
+
+	echo -e $(formatText $NORMAL $BOLD $UNDERLINE "$(colorText ${COLOR:-$Blue} $OUTPUT)")
 }
 function Highlight() {
 	local color=${1:=$Yellow}
@@ -252,15 +276,20 @@ function Highlight() {
 	echo -e "$(tput setab $(hexToColor $color))$output$(tput sgr0)"
 }
 function HighlightLine() {
-	local color=${1:=$Yellow}
-	local output=" ${2:=""} "
-	local output_length=${#output}
-	local terminal_width=$(tput cols)
+	local str=
+	local color=
 
-	# Adjust the output based on terminal width
-	output+="$(printf "%*s" $((terminal_width - output_length)) " ")"
+	if [[ $# -eq 1 ]]; then
+		str="$1"
+	elif [[ $# -eq 2 ]]; then
+		color="$1"
+		str="$2"
+	fi
 
-	echo -e $(Highlight $color "$output")
+	str=" ${str:=""} "
+	color=${color:=$Yellow}
+
+	Highlight $color "$(adjustToTerminalWidth "$str")"
 }
 #- Formatting Functions
 function Alert() {
@@ -268,7 +297,7 @@ function Alert() {
 	local color=${2:-$cWarning}
 	local str=${3:-''}
 
-	echo -e $(Color $txt_color "$(HighlightLine $color $str)")
+	echo -e $(Color $txt_color "$(HighlightLine "$str" $color)")
 }
 
 #============================================================
@@ -300,6 +329,7 @@ function GitSuccess() {
 	local output="$msg"
 	local output_length=$((${#icon} + ${#output}))
 	local terminal_width=$(tput cols)
+	local str=
 
 	# Adjust the output based on terminal width
 	if (( output_length < terminal_width )); then
@@ -308,8 +338,10 @@ function GitSuccess() {
 	#     output="${output:0:$terminal_width-3}..."
 	fi
 
+	str="$(Highlight $DarkGray "$(Color $cSuccess "$icon")")$(Color $Blue "$output")"
+
 	echo "$(tput sgr0)"
-	echo "$(Highlight $DarkGray "$icon")$(Highlight $Blue "$output")"
+	echo $(adjustToTerminalWidth "$str")
 	echo
 }
 function GitFailure() {
@@ -326,18 +358,23 @@ function GitFailure() {
 	#     output="${output:0:$terminal_width-3}..."
 	fi
 
+	str="$(Highlight $cError "$icon")$(Color $cWarning "$output")"
+
 	echo "$(tput sgr0)"
-	echo "$(Highlight $cError "$icon")$(Color $cWarning "$output")"
+	echo $(adjustToTerminalWidth "$str")
 	echo
 }
 function Warning() {
-	echo -e $(Color -c $cWarning -m ${1:='Warning'} -b)
+	echo -e $(Color $cWarning ${1:='Warning'})
 }
 function Error() {
-	echo -e $(Color -c $cError -m ${1:='Error'} -b)
+	echo -e $(Color $cError ${1:='Error'})
+}
+function Caution() {
+	echo -e $(Color $cCaution ${1:='Caution'})
 }
 function Message() {
-	echo -e $(Color -c $cMessage -m ${1:='Message'})
+	echo -e $(Color $cMessage ${1:='Message'})
 }
 
 # End Text Formatting
@@ -356,7 +393,6 @@ function Message() {
 function shutdown() {
 	tput cnorm
 }
-
 function loadingAnimation() {
 	local pid=${1:=$!} # Process Id of the previous running command
 	local msg=${2:="Please hold"} # Message to display
@@ -472,7 +508,6 @@ function loadingAnimation() {
 
 	echo -n "$(tput cnorm)"
 }
-
 function animationTest() {
 	MSG=${1-'Testing with a medium length message for 2 seconds.'}
 	
@@ -491,7 +526,6 @@ function animationTest() {
 		loadingAnimation $! $MSG
 	)
 }
-
 function gitAnimationTest() {
 	MSG=${1-'Testing gitAnimationTest() with a medium length message for 2 seconds.'}
 	
@@ -509,7 +543,9 @@ function gitAnimationTest() {
 		loadingAnimation $! 'Testing gitAnimationTest() with a medium length message for 2 seconds.'
 	)
 
+	echo ""
 	echo "do stuff"
+	echo ""
 
 	(
 		( 
@@ -522,10 +558,9 @@ function gitAnimationTest() {
 				exit 1
 			fi
 		) &
-		loadingAnimation $! '2nd testing gitAnimationTest() with a medium length message for 2 seconds.'
+		loadingAnimation $! "2nd testing gitAnimationTest() with a longer message than the last one by quite a bit for 2 seconds. Now I fill this space with text to lengthen the message. Isn't this just the most interesting stuff?"
 	)
 }
-
 # End Animations
 #============================================================
 
@@ -535,21 +570,23 @@ function gitAnimationTest() {
 
 # Git
 #-------------------------------------------------------------
+
+# References
 function getNearestGitRepo() {
 	local hierarchyLimit=${1:-5}
 	local currentDir=$(pwd)
-	local gitDir=""
+	gitRepo=""
 
 	# Check if the current directory itself contains a .git file or folder
 	if [ -d "$currentDir/.git" ]; then
-		gitDir="$currentDir"
+		gitRepo="$currentDir"
 	else
 		# Traverse up the directory hierarchy
 		local count=0
 		while [ "$currentDir" != "/" ] && [ $count -lt $hierarchyLimit ]; do
 			currentDir=$(dirname "$currentDir")
 			if [ -d "$currentDir/.git" ]; then
-				gitDir="$currentDir"
+				gitRepo="$currentDir"
 				break
 			fi
 			((count++))
@@ -557,8 +594,8 @@ function getNearestGitRepo() {
 	fi
 
 	# Move to the nearest directory with a .git file/folder
-	if [ -n "$gitDir" ]; then
-		echo "$gitDir"
+	if [ -n "$gitRepo" ]; then
+		echo "$gitRepo"
 		return 0
 	else
 		Error "No .git directory found within the hierarchy limit. Be sure you are in a branch or repo"
@@ -568,21 +605,21 @@ function getNearestGitRepo() {
 function getNearestGitDirectory() {
 	local hierarchyLimit=${1:-5}
 	local currentDir=$(pwd)
-	local gitDir=""
+	gitDir=""
 
 	# Check if the current directory itself contains a .git file or folder
-	if [ -f "$currentDir/.git" ]; then
+	if [ -f "$currentDir/.git" ] || [ -d "$currentDir/.git" ]; then
 		gitDir="$currentDir"
 	else
 		# Traverse up the directory hierarchy
 		local count=0
-		while [ "$currentDir" != "/" ] && [ $count -lt $hierarchyLimit ]; do
+		while [ "$currentDir" != "/" ] && [ $hierarchyLimit -gt 0 ]; do
 			currentDir=$(dirname "$currentDir")
-			if [ -f "$currentDir/.git" ]; then
+			if [ -f "$currentDir/.git" ] || [ -d "$currentDir/.git" ]; then
 				gitDir="$currentDir"
 				break
 			fi
-			((count++))
+			hierarchyLimit=$((hierarchyLimit - 1))
 		done
 	fi
 
@@ -591,81 +628,246 @@ function getNearestGitDirectory() {
 		echo "$gitDir"
 		return 0
 	else
-		Error "No .git directory found within the hierarchy limit. Be sure you are in a branch or repo"
-		return 1
+		echo "$(getNearestGitRepo)"
 	fi
 }
 function goToGitRepo() {
-	local gitDir=$(getNearestGitRepo)
+	gitRepo=$(getNearestGitRepo)
 
-	cd $gitDir &>/dev/null
+	cd $gitRepo &>/dev/null
 }
 function goToGitDir() {
-	local gitDir=$(getNearestGitDirectory)
+	gitDir=$(getNearestGitDirectory)
 
 	cd $gitDir &>/dev/null
 }
-function checkValidWorktree() {
-	goToGitDir
-	# Check if .git file exists
-	if [ ! -f ".git" ]; then
-		GitFailure "Error: Not in a worktree."
-		return 1
-	fi
-	
+function gitRefCheck() {	
 	# Read the line from the .git file
-	read -r line < ".git"
+	read -r line < "$(getNearestGitDirectory)/.git"
 	
 	# Extract path values
 	gitRef=$(basename "$line")
 	gitPath=$(dirname "$line")
 	gitRepo=$(getNearestGitRepo)
-	gitDir=$(basename "$PWD")
-	
-	# Print the result
-	if [[ $gitRef == $gitDir ]] && [ -d $gitRepo/.git/worktrees/$gitRef ]; then
+	gitDir=$(basename "$(getNearestGitDirectory)")
+}
+
+
+function checkGitDivergence() {
+	local branch_name=$(git symbolic-ref --short HEAD)
+	local remote_branch="origin/$branch_name"
+
+	local local_commit=$(git rev-parse HEAD)
+	local remote_commit=$(git rev-parse "$remote_branch")
+	local base_commit=$(git merge-base HEAD "$remote_branch")
+
+	if [[ $local_commit == $remote_commit ]]; then
 		return 0
 	else
-		GitFailure "Error: Worktree and branch names do not match."
-		Color $cWarning "Local Worktree Directory:"
-		echo "$gitDir"
-		Color $cWarning "Git Branch Reference:"
-		echo "$gitRef"
-		echo
+		GitFailure "The branch '$branch_name' has diverged from the origin."
+		
+		if promptYesNo "$(Message "Do you want to pull the changes before continuing?")"; then
+			(
+				(
+					if ! git add . &>/dev/null; then
+						GitFailure "Unable to add any changes"
+						echo $(git add .)
+						exit 1
+					else
+						GitSuccess "Added untracked changes"
+						exit
+					fi
+				) & loadingAnimation $! "Adding untracked changes"
 
-		echo "Which would you like to update?"
-		echo "$(Message '1')) Git Branch Reference value"
-		echo "$(Message '2')) Worktree Directory value"
-		echo "$(Message '3')) Neither"
-		echo -n ": "
+				wait $!
+			)
+			
+			(
+				(
+					if ! git stash &>/dev/null; then
+						GitFailure "Unable to stash changes"
+						echo $(git stash)
+						exit 1
+					else
+						GitSuccess "Stashed changes"
+						exit
+					fi
+				) & loadingAnimation $! "Stashing changes"
 
-		local response
-		read response
-		case $response in
-			1) 
-				echo "$gitPath/$gitDir" > .git
-				;;
-			2) 
-				renameCurrentDirectory "$gitRef"
-				cd "$gitRepo/$gitRef" &>/dev/null
-				;;
-			*) 
-				Success "Cancelled"
-				echo
-				Warning "It is recommended to have your Worktree Directory named the same as your Git Branch. When creating a new worktree, be sure to use the gwtn function"
-				echo
-				;;
-		esac
+				wait $!
+			)
+			
+			(
+				(
+					if ! ( git fetch origin $branch_name && git pull origin $branch_name ) &>/dev/null; then
+						GitFailure "Unable to update branch"
+						echo $( git fetch origin $branch_name && git pull origin $branch_name )
+						exit 1
+					else
+						GitSuccess "Branch updated"
+						exit
+					fi
+				) & loadingAnimation $! "Updating branch"
 
+				wait $!
+			)
+
+			(
+				(
+					if ! ( git checkout stash -- . ) &>/dev/null; then
+						GitFailure "Unable to pop last stash"
+						echo $( git checkout stash -- . )
+						exit 1
+					else
+						GitSuccess "Stashed changes popped"
+						exit
+					fi
+				) & loadingAnimation $! "Popping stashed changes"
+
+				wait $!
+			)
+		fi
+	fi
+}
+function worktreeCheck() {
+	local repo=${1:-"$gitRepo"}
+	local ref=${2:-"$gitRef"}
+
+	if [ -d "$1/.git/worktrees/$2" ]; then
 		return 1
+	fi
+	
+	return 0
+}
+function worktreeExists() {
+	gitRefCheck
+	
+	worktreeCheck
+}
+function gitBranchExists() {
+	local branch_name="${1:-$(git branch |grep \* | cut -d " " -f2)}"
+	git rev-parse --quiet --verify "$branch_name" >/dev/null
+}
+function isValidWorktree() {
+	# If worktree reference exists in repo
+	if worktreeExists; then
+		# If .git reference matches folder name
+		if [[ $gitRef == $gitDir ]]; then
+			return 0
+		fi
+	fi
+
+	return 1
+}
+function updateWorktreePrompt() {
+	gitRefCheck
+
+	GitFailure "Error: Worktree and branch names do not match."
+	Color $cWarning "Git Branch Reference:"
+	echo "$gitRef"
+	Color $cWarning "Local Worktree Directory:"
+	echo "$gitDir"
+	echo
+
+	echo "Which would you like to update?"
+	echo "$(Message '1')) Git Branch Reference"
+	echo "$(Message '2')) Local Worktree Directory"
+	echo "$(Message '3')) None"
+	echo "$(Message '*')) Cancel"
+	echo -n ": "
+
+	local response
+	read response
+	case $response in
+		1)
+			if worktreeExists; then
+				echo "Worktree exists. Setting reference"
+				echo "gitdir: $gitPath/.git/worktrees/$gitDir" > .git
+				return 0
+			else
+				Error "Worktree not yet created. Use gwtn to create a new worktree"
+				return 1
+			fi
+			;;
+		2)
+			echo "Renaming directory to $gitRef"
+			renameCurrentDirectory "$gitRef"
+			cd "$gitRepo/$gitRef" &>/dev/null
+			return 0
+			;;
+		3) 
+			echo
+			Caution "To remove these errors, be sure to have your Worktree Directory named the same as your Git Branch. To avoid this in the future, use the gwtn function when creating a new worktree"
+			echo
+			Error "Worktree and Git branch still do not match"
+			return 0
+			;;
+		*) 
+			echo
+			Message "Cancelled"
+			return 1
+			;;
+	esac
+
+	gitRef=""
+	gitPath=""
+	gitRepo=""
+	gitDir=""
+}
+function checkValidWorktree() {
+	gitRefCheck
+
+	if isValidWorktree; then
+		return true
+	fi
+
+	if updateWorktreePrompt; then
+		return true
+	else
+		return false
+	fi
+}
+function validateWorktree() {
+	if [[ $? == 0 ]]; then
+		if ! isValidWorktree; then
+			if promptYesNo "$(Warning "Do you want to continue anyway?")"; then
+				return 0
+			fi
+		fi
+	fi
+
+	return 1
+}
+function convertDirectoryToWorktree() {
+	local cur_git_path=${1:-"$(getNearestGitRepo)"}
+	local cur_dir_name=${2:-"$(basename $PWD)"}
+
+	if worktreeCheck $1 $2; then
+		echo "gitdir: $1/.git/worktrees/$2" > .git
+		GitSuccess "Converted $2 to worktree"
+	else
+		GitFailure "Unable to convert to worktree: worktree does not exist."
 	fi
 }
 function cmp() {
-	gitPush $@
+	if ! checkValidWorktree; then
+		validateWorktree
+	fi
+
+	if checkGitDivergence; then
+		gitPush $@
+	fi
 }
 function camp() {
-	git add .
-	gitPush $@
+	if ! checkValidWorktree; then
+		validateWorktree
+	fi
+
+	git add . &>/dev/null
+
+	if checkGitDivergence; then
+		gitPush $@
+	fi
 }
 function gitPush() {
 	# Usage
@@ -749,10 +951,7 @@ function gitPush() {
 	# echo 'msg: ' $msg
 	# echo 'branch: ' $branch
 
-	findEnv
-	if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-		cd $ENV$(git branch |grep \* | cut -d " " -f2)
-	fi
+	goToGitDir
 
 	(
 		(
@@ -760,13 +959,19 @@ function gitPush() {
 				GitSuccess "$(git show -s --format='%s')"
 				exit
 			else
-				GitFailure "Error: Failed to commit changes."
 				echo "$(git commit -m "$msg")"
 				exit 1
 			fi
 		) &
 		loadingAnimation $! "Committing changes"
+
+		wait $!
 	)
+
+	if [[ $? != 0 ]]; then
+		GitFailure "Error: Failed to commit changes."
+		return 1
+	fi
 
 	(
 		(
@@ -791,7 +996,14 @@ function gitPush() {
 			fi
 		) &
 		loadingAnimation $! "Pushing changes"
+
+		wait $!
 	)
+
+	if [[ $? != 0 ]]; then
+		GitFailure "Error: Failed to commit changes."
+		return 1
+	fi
 
 	(
 		(
@@ -816,7 +1028,14 @@ function gitPush() {
 			fi
 		) &
 		loadingAnimation $! "Pushing tags"
+
+		wait $!
 	)
+
+	if [[ $? != 0 ]]; then
+		GitFailure "Error: Failed to commit changes."
+		return 1
+	fi
 }
 function gitPull() {
 	# Usage
@@ -895,8 +1114,14 @@ function gwtn() {
 			cd $ENV &>/dev/null
 		fi
 
+		if [ -d $ENV"starter_branch" ]; then
+			Error "starter_branch is in your worktrees. Remove the starter_branch worktree and try again."
+			return
+		fi
+
 		if [ -d $ENV$branch ]; then
-			Alert "It looks like $ENV$branch is already in your worktrees."
+			Caution "$ENV$branch is already in your worktrees. Moving there now..."
+			cd $ENV$branch &>/dev/null
 			return
 		fi
 
@@ -910,6 +1135,7 @@ function gwtn() {
 			(
 				if git show-ref --quiet refs/remotes/origin/"$branch"; then
 					existingBranch=true
+					git fetch origin $branch &>/dev/null
 					if git worktree add --track -B $branch ./$branch origin/$branch &>/dev/null; then
 						GitSuccess "Worktree added: $branch"
 						git checkout root &>/dev/null
@@ -1349,7 +1575,6 @@ function repairWorktrees() {
 
 	-
 }
-
 function repairWorktree() {
 	local branch=$(git branch |grep \* | cut -d " " -f2)
 
@@ -1480,7 +1705,7 @@ alias mg='git merge'
 alias mpeek='git log master.. --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
 alias newb='git checkout -b'
 alias pages='git stash && git checkout gh-pages'
-alias peek='git fetch && git log --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20} --'
+alias peek='git fetch && git log --graph origin/$(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20} --'
 alias peekall='git log --graph origin --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
 alias poke='git push origin $(git symbolic-ref --short HEAD)'
 alias pop='git stash pop'

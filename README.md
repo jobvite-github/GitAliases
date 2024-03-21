@@ -2,7 +2,6 @@
 
 ## Table of Contents
 - [Introduction](#introduction)
-- [Getting Started](#getting-started)
 - [Installing](#installing)
 - [Updating aliases](#updating-aliases)
 - [Functions](#functions)
@@ -11,36 +10,32 @@
 <br>
 
 # Introduction
+A bunch of helpful aliases for a fast, efficient workflow. Most of the important functions are listed below. Take a look!
 
-A bunch of helpful aliases for the Jobvite workflow. Most of the important functions are listed below. Take a look!
+# Installing
+### 1) Loading the aliases
+In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, open it by running `open ~/.zshrc` or `open ~/.zshrc`.
 
-<br>
-# Getting Started
+>__Note:__
+If you don't know which one you are using, run `echo $0`. This should display "`-zsh`" or "`-bash`". Use whichever one displays or install and choose your own. You can follow [these steps](https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH) to install zsh.
 
-To get started, you will need to add the code in the [.profile](./.profile) file to your `.profile` file in your User directory ( `~/` ) ( `~/` ).
-
-Once your `.profile` is updated. In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, add in the following line to the end of that file:
-
+Then, add in the following line to the end of that file:
 ```sh
 source ~/.profile
 ```
+This ensures the aliases are loaded for every terminal session.
 
-<br>
-
-# Installing
-1 In your terminal, run the following code to open up your `.profile` in VSCode:
-
+### 2) In your terminal, run the following code to open up your `.profile` in your default editor:
+To get started, you will need to add the code in [this .profile file](./.profile) to your `.profile` file in your User directory ( `~/` ) ( `~/` ). 
 ```sh
-code ~/.profile
+open ~/.profile
 ```
 
-Replace all, if any, content with the [.profile](./.profile) code in this repo.
+Replace all, if any, content with [this .profile file](./.profile) in this repo.
+After you put the latest code in your `.profile`, make sure you update the configuration variables.
+>__Example__: If your CWS folder is in your User Directory ( `~/` ), you would make `JVPATH` equal `~/CWS/`.
 
-After you put the latest code in your `.profile`, make sure you update the `JVPATH` variable to reflect the path to your JV CWS folder.
-
-If your CWS folder is in your User Directory ( `~/` ), for example, you would make `JVPATH` equal `~/CWS/`.
-
-2 Save your file, then run:
+### 3) Save your file, then run:
 
 ```sh
 source ~/.profile
@@ -49,7 +44,7 @@ source ~/.profile
 <br>
 
 # Updating aliases
-1 In your terminal, run:
+### 1) In your terminal, run:
 
 ```sh
 config
@@ -61,7 +56,7 @@ After you put the latest code in your `.profile`, make sure you update the `JVPA
 
 If your CWS folder is in your User Directory ( `~/` ), for example, you would make `JVPATH` equal `~/CWS/`.
 
-2 Save your file, then open a new Shell, or run:
+### 2) Save your file, then open a new Shell, or run:
 
 ```sh
 reload

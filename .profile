@@ -37,7 +37,7 @@ function findEnv() {
 		step=$3
 	fi
 	result="${dir%"${dir##*[!/]}"}" # extglob-free multi-trailing-/ trim
-	result="${result##*/}"                  # remove everything before the last /
+	result="${result##*/}"          # remove everything before the last /
 	result=${result:-/}
 	result=`echo "$result" | tr 'A-Z' 'a-z'`
 
@@ -58,10 +58,7 @@ function findEnv() {
 	step=0
 }
 function goToCurrentBranch() {
-	local branch=$(git branch |grep \* | cut -d " " -f2)
-
-	findEnv
-	cd $ENV$branch
+	cd $(getNearestGitDirectory)
 }
 
 #-------------------------------------------------------------
@@ -89,7 +86,12 @@ function fnd() {
 		Message 'Enter the name of the file you want to search and, optionally ( as the first argument ), where you want to search.'
 	fi
 }
-function contains() { case "$1" in *"$2"*) true ;; *) false ;; esac }
+function contains() { 
+	case "$1" in
+		*"$2"*) true ;;
+		*) false ;; 
+	esac
+}
 function renameCurrentDirectory() {
 	local new_dir_name="$1"
 
@@ -331,17 +333,10 @@ function GitSuccess() {
 	local terminal_width=$(tput cols)
 	local str=
 
-	# Adjust the output based on terminal width
-	if (( output_length < terminal_width )); then
-		output+="$(printf "%*s" $((terminal_width - output_length)) " ")"
-	# elif (( output_length > terminal_width )); then
-	#     output="${output:0:$terminal_width-3}..."
-	fi
-
 	str="$(Highlight $DarkGray "$(Color $cSuccess "$icon")")$(Color $Blue "$output")"
 
 	echo "$(tput sgr0)"
-	echo $(adjustToTerminalWidth "$str")
+	echo $str
 	echo
 }
 function GitFailure() {
@@ -351,17 +346,10 @@ function GitFailure() {
 	local output_length=$((${#icon} + ${#output}))
 	local terminal_width=$(tput cols)
 
-	# Adjust the output based on terminal width
-	if (( output_length < terminal_width )); then
-		output+="$(printf "%*s" $((terminal_width - output_length)) " ")"
-	# elif (( output_length > terminal_width )); then
-	#     output="${output:0:$terminal_width-3}..."
-	fi
-
 	str="$(Highlight $cError "$icon")$(Color $cWarning "$output")"
 
 	echo "$(tput sgr0)"
-	echo $(adjustToTerminalWidth "$str")
+	echo $str
 	echo
 }
 function Warning() {
@@ -593,7 +581,7 @@ function getNearestGitRepo() {
 		done
 	fi
 
-	# Move to the nearest directory with a .git file/folder
+	# Find the nearest directory with a .git folder
 	if [ -n "$gitRepo" ]; then
 		echo "$gitRepo"
 		return 0
@@ -603,33 +591,34 @@ function getNearestGitRepo() {
 	fi
 }
 function getNearestGitDirectory() {
-	local hierarchyLimit=${1:-5}
-	local currentDir=$(pwd)
-	gitDir=""
-
-	# Check if the current directory itself contains a .git file or folder
-	if [ -f "$currentDir/.git" ] || [ -d "$currentDir/.git" ]; then
-		gitDir="$currentDir"
+	echo "$(git rev-parse --show-toplevel)"
+}
+function getCurrentBranchName() {
+	local nearestDir=$(getNearestGitDirectory)
+	if [[ $(getNearestGitRepo) == $(getNearestGitDirectory) ]]; then
+		local branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+		if [ -n "$branch" ]; then
+			# GitSuccess "Current branch: $branch"
+			echo $branch
+		else
+			GitFailure "Detached HEAD state, not on a branch. Checkout to the desired branch first."
+			return 1
+		fi
 	else
-		# Traverse up the directory hierarchy
-		local count=0
-		while [ "$currentDir" != "/" ] && [ $hierarchyLimit -gt 0 ]; do
-			currentDir=$(dirname "$currentDir")
-			if [ -f "$currentDir/.git" ] || [ -d "$currentDir/.git" ]; then
-				gitDir="$currentDir"
-				break
-			fi
-			hierarchyLimit=$((hierarchyLimit - 1))
-		done
+		# GitSuccess "Current basename nearestDir: $(basename "$nearestDir")"
+		echo "$(basename "$nearestDir")"
 	fi
 
-	# Move to the nearest directory with a .git file/folder
-	if [ -n "$gitDir" ]; then
-		echo "$gitDir"
-		return 0
+}
+function getCurrentWorktreeName() {
+	local dir=''
+	gitRefCheck &>/dev/null
+	if [[ $gitDir == $gitRepo ]]; then
+		dir=$(getCurrentBranchName)
 	else
-		echo "$(getNearestGitRepo)"
+		dir=$(getNearestGitDirectory)
 	fi
+	echo $(basename $dir)
 }
 function goToGitRepo() {
 	gitRepo=$(getNearestGitRepo)
@@ -637,34 +626,27 @@ function goToGitRepo() {
 	cd $gitRepo &>/dev/null
 }
 function goToGitDir() {
-	gitDir=$(getNearestGitDirectory)
-
-	cd $gitDir &>/dev/null
+	if [[ $(git rev-parse --show-cdup) ]]; then
+		cd $(git rev-parse --show-cdup) &>/dev/null
+	elif [[ $(getNearestGitDirectory) != $(getNearestGitRepo) ]]; then
+		cd $(getNearestGitDirectory) &>/dev/null
+	fi
 }
-function gitRefCheck() {	
-	# Read the line from the .git file
-	read -r line < "$(getNearestGitDirectory)/.git"
-	
-	# Extract path values
-	gitRef=$(basename "$line")
-	gitPath=$(dirname "$line")
+function gitRefCheck() {
+	# Set repo and branch/worktree paths
+	gitPath=$(git rev-parse --absolute-git-dir)
 	gitRepo=$(getNearestGitRepo)
-	gitDir=$(basename "$(getNearestGitDirectory)")
+	gitDir=$(getNearestGitDirectory)
+	gitRef=$(getCurrentBranchName)
+
+	echo "gitPath: $gitPath"
+	echo "gitRepo: $gitRepo"
+	echo "gitDir: $gitDir"
+	echo "gitRef: $gitRef"
 }
-
-
 function checkGitDivergence() {
-	local branch_name=$(git symbolic-ref --short HEAD)
-	local remote_branch="origin/$branch_name"
-
-	local local_commit=$(git rev-parse HEAD)
-	local remote_commit=$(git rev-parse "$remote_branch")
-	local base_commit=$(git merge-base HEAD "$remote_branch")
-
-	if [[ $local_commit == $remote_commit ]]; then
-		return 0
-	else
-		GitFailure "The branch '$branch_name' has diverged from the origin."
+	if [ -z "$(git symbolic-ref HEAD 2>/dev/null)" ]; then
+        GitFailure "The branch '$gitRef' has diverged from the origin."
 		
 		if promptYesNo "$(Message "Do you want to pull the changes before continuing?")"; then
 			(
@@ -699,9 +681,9 @@ function checkGitDivergence() {
 			
 			(
 				(
-					if ! ( git fetch origin $branch_name && git pull origin $branch_name ) &>/dev/null; then
+					if ! ( git fetch origin $gitRef && git pull origin $gitRef ) &>/dev/null; then
 						GitFailure "Unable to update branch"
-						echo $( git fetch origin $branch_name && git pull origin $branch_name )
+						echo $( git fetch origin $gitRef && git pull origin $gitRef )
 						exit 1
 					else
 						GitSuccess "Branch updated"
@@ -727,40 +709,31 @@ function checkGitDivergence() {
 				wait $!
 			)
 		fi
-	fi
-}
-function worktreeCheck() {
-	local repo=${1:-"$gitRepo"}
-	local ref=${2:-"$gitRef"}
-
-	if [ -d "$1/.git/worktrees/$2" ]; then
-		return 1
-	fi
-	
-	return 0
+    else
+		return 0
+    fi
 }
 function worktreeExists() {
-	gitRefCheck
+	gitRefCheck &>/dev/null
+    if [ -z "$gitPath" ]; then
+        # GitFailure "Worktree reference '$gitRef' does not exist at $gitPath."
+		return 1
+    else
+		# GitSuccess "Worktree reference '$gitRef' exists at $gitPath."
+		return 0
+    fi
+}
+function worktreeCheck() {
+	gitRefCheck &>/dev/null
 	
-	worktreeCheck
-}
-function gitBranchExists() {
-	local branch_name="${1:-$(git branch |grep \* | cut -d " " -f2)}"
-	git rev-parse --quiet --verify "$branch_name" >/dev/null
-}
-function isValidWorktree() {
-	# If worktree reference exists in repo
-	if worktreeExists; then
-		# If .git reference matches folder name
-		if [[ $gitRef == $gitDir ]]; then
-			return 0
-		fi
+	if worktreeExists $gitRef; then
+		GitSuccess "Worktree $gitRef exists"
+	else
+		GitFailure "Worktree $gitRef does not exist"
 	fi
-
-	return 1
 }
 function updateWorktreePrompt() {
-	gitRefCheck
+	gitRefCheck &>/dev/null
 
 	GitFailure "Error: Worktree and branch names do not match."
 	Color $cWarning "Git Branch Reference:"
@@ -797,7 +770,7 @@ function updateWorktreePrompt() {
 			;;
 		3) 
 			echo
-			Caution "To remove these errors, be sure to have your Worktree Directory named the same as your Git Branch. To avoid this in the future, use the gwtn function when creating a new worktree"
+			Caution "To remove these errors, be sure to have your Worktree Directory named the same as your Git Branch. To avoid this in the future, use gwtn when creating a new worktree"
 			echo
 			Error "Worktree and Git branch still do not match"
 			return 0
@@ -815,9 +788,9 @@ function updateWorktreePrompt() {
 	gitDir=""
 }
 function checkValidWorktree() {
-	gitRefCheck
+	gitRefCheck &>/dev/null
 
-	if isValidWorktree; then
+	if worktreeExists; then
 		return true
 	fi
 
@@ -829,7 +802,7 @@ function checkValidWorktree() {
 }
 function validateWorktree() {
 	if [[ $? == 0 ]]; then
-		if ! isValidWorktree; then
+		if ! worktreeExists; then
 			if promptYesNo "$(Warning "Do you want to continue anyway?")"; then
 				return 0
 			fi
@@ -842,7 +815,7 @@ function convertDirectoryToWorktree() {
 	local cur_git_path=${1:-"$(getNearestGitRepo)"}
 	local cur_dir_name=${2:-"$(basename $PWD)"}
 
-	if worktreeCheck $1 $2; then
+	if worktreeExists; then
 		echo "gitdir: $1/.git/worktrees/$2" > .git
 		GitSuccess "Converted $2 to worktree"
 	else
@@ -850,13 +823,7 @@ function convertDirectoryToWorktree() {
 	fi
 }
 function cmp() {
-	if ! checkValidWorktree; then
-		validateWorktree
-	fi
-
-	if checkGitDivergence; then
-		gitPush $@
-	fi
+	gitPush $@
 }
 function camp() {
 	if ! checkValidWorktree; then
@@ -879,10 +846,10 @@ function gitPush() {
 	#= gitPush -t <tag> -m <msg> <commit_msg>
 	#
 	# You can specify a branch name by adding that branch name at
-	#    the end of the function call. Example:
+	#    the end of the fn call. Example:
 	#        gitPush <commit_msg> <branch_name>
 	#-------------------------------------------------------------
-	local branch=$(git branch |grep \* | cut -d " " -f2)
+	local branch=$(getCurrentWorktreeName)
 
 	# Flags
 	m=false		#commit message flag
@@ -895,15 +862,37 @@ function gitPush() {
 	msg=''	#commit message
 
 	for (( i = 1; i <= $#; i += 1 )); do
-		if [[ ${@[$i]} == '-t' ]]; then # if tagged
+		if [[ ${@[$i]} == '-h' ]] || [[ ${@[$i]} == '--help' ]]; then # if help
+			echo "gitPush - Push changes to a Git repository"
+			echo ""
+			echo "Usage:"
+			echo "gitPush"
+			echo "gitPush <commit_msg>"
+			echo "gitPush -t <tag>"
+			echo "gitPush -t <tag> <commit_msg>"
+			echo "gitPush -t <tag> -m <msg>"
+			echo "gitPush -t <tag> -m <msg> <commit_msg>"
+			echo ""
+			echo "Options:"
+			echo "-h, --help               show brief help"
+			echo "-t, --tag <tag>          includes a tag"
+			echo "-m, --tag-msg <msg>      specifies a tag message"
+			echo "-f, --force              force push changes"
+			echo ""
+			echo "Note:"
+			echo "If no commit message is provided and no tag message is specified when using the -t flag, this will prompt you to include a message with your commit."
+			echo ""
+			echo "Ensure you are in the correct Git directory before running this."
+			return
+		elif [[ ${@[$i]} == '-t' || ${@[$i]} == '--tag' ]]; then # if tagged
 			t=true
 			i+=1
 			tag=${@[$i]}
-		elif [[ ${@[$i]} == '-m' ]]; then # if tag and commit msg
+		elif [[ ${@[$i]} == '-m' || ${@[$i]} == '--tag-msg' ]]; then # if tag and commit msg
 			tm=true
 			i+=1
 			tmg=${@[$i]}
-		elif [[ ${@[$i]} == '-f' ]]; then # if force pushed
+		elif [[ ${@[$i]} == '-f' || ${@[$i]} == '--force' ]]; then # if force pushed
 			f=true
 		elif [[ ${@[$i]} != "" ]]; then
 			git show-ref --quiet refs/remotes/origin/${@[$i]}
@@ -1042,10 +1031,10 @@ function gitPull() {
 	#= gitPull
 	#
 	# You can specify a branch name by adding that branch name at
-	#    the end of the function call. Example:
+	#    the end of the fn call. Example:
 	#        gitPull <branch_name>
 	#-------------------------------------------------------------
-	local branch=$(git branch |grep \* | cut -d " " -f2)
+	local branch=$(getCurrentWorktreeName)
 
 	(
 		(
@@ -1121,13 +1110,13 @@ function gwtn() {
 
 		if [ -d $ENV$branch ]; then
 			Caution "$ENV$branch is already in your worktrees. Moving there now..."
-			cd $ENV$branch &>/dev/null
+			goToGitDir &>/dev/null
 			return
 		fi
 
 		trap 'echo && echo $(Alert $cWarning "Stopped creating worktree \"$branch\"\nCheck on what has been created so far") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
 
-		if ([[ $branch != 'starter_branch' ]] && git checkout starter_branch &>/dev/null); then
+		if ([[ $branch != 'starter_branch' ]] && git switch starter_branch &>/dev/null); then
 			gitPull
 		fi
 
@@ -1138,13 +1127,13 @@ function gwtn() {
 					git fetch origin $branch &>/dev/null
 					if git worktree add --track -B $branch ./$branch origin/$branch &>/dev/null; then
 						GitSuccess "Worktree added: $branch"
-						git checkout root &>/dev/null
+						git switch root &>/dev/null
 						cd "$branch/" &>/dev/null
 						mkdir _dev &>/dev/null
 						exit
 					else
 						GitFailure "Unable to create worktree"
-						git checkout root &>/dev/null
+						git switch root &>/dev/null
 						echo $(git worktree add --track -B $branch ./$branch origin/$branch)
 						exit 1
 					fi
@@ -1152,13 +1141,13 @@ function gwtn() {
 					existingBranch=false
 					if git worktree add $branch &>/dev/null; then
 						GitSuccess "Worktree added: $branch"
-						git checkout root &>/dev/null
+						git switch root &>/dev/null
 						cd "$branch/" &>/dev/null
 						mkdir _dev &>/dev/null
 						exit
 					else
 						GitFailure "Unable to create worktree"
-						git checkout root &>/dev/null
+						git switch root &>/dev/null
 						echo $(git worktree add $branch)
 						exit 1
 					fi
@@ -1168,7 +1157,7 @@ function gwtn() {
 			loadingAnimation $! "Setting up worktree \"$branch\""
 		)
 
-		cd $ENV$branch &>/dev/null
+		goToGitDir &>/dev/null
 
 		if ! $SKIP_INSTALL && ! $MAKE; then
 			start -i || { GitFailure "Unable to install npm"; return; }
@@ -1178,13 +1167,13 @@ function gwtn() {
 			(
 				(
 					if $existingBranch; then
-						if git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git" &>/dev/null && git push --set-upstream origin $(git symbolic-ref --short HEAD) &>/dev/null; then
+						if git commit -am "Setting up $(getNearestGitDirectory) project in Git" &>/dev/null && git push --set-upstream origin $(getNearestGitDirectory) &>/dev/null; then
 							GitSuccess "Branch created: $branch"
 							exit
 						else
 							GitFailure "Unable to create branch: $branch"
-							echo $(git commit -am "Setting up $(git symbolic-ref --short HEAD) project in Git")
-							echo $(git push --set-upstream origin $(git symbolic-ref --short HEAD))
+							echo $(git commit -am "Setting up $(getNearestGitDirectory) project in Git")
+							echo $(git push --set-upstream origin $(getNearestGitDirectory))
 							exit 1
 						fi
 					else
@@ -1222,37 +1211,30 @@ function gwtn() {
 	fi
 }
 function gwtr() {
-	trap 'echo && echo $(Alert $cWarning "Stopped removing worktree \"$branch\"\nCheck on what has been deleted") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
+	gitRefCheck &>/dev/null
+	trap 'echo && echo $(Alert $cWarning "Stopped removing worktree \"$gitRef\"\nCheck on what has been deleted") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
 
-	local branch=${1:=$(git symbolic-ref --short HEAD)}
+	if ! worktreeExists; then
+		GitFailure "Invalid worktree: $gitRef"
+		return
+	fi
 
-	if [[ $branch != "root" ]] || [[ $branch != "starter_branch" ]]; then
-
-		if ! [ -d $ENV$branch ]; then
-			Alert "There is no existing $ENV$branch directory."
-			return
-		fi
-
-		findEnv
-		if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-			cd $ENV &>/dev/null
-		fi
-
-		cd $ENV$branch &>/dev/null
-		git checkout . &>/dev/null
+	if [[ $gitRef != "root" ]] || [[ $gitRef != "starter_branch" ]]; then
+		cd $gitDir &>/dev/null
+		git restore . &>/dev/null
 
 		(
 			(
-				if git worktree remove $branch &>/dev/null; then
-					GitSuccess "$branch has been removed."
+				if git worktree remove $gitRef &>/dev/null; then
+					GitSuccess "$gitRef has been removed."
 					exit
 				else
-					GitFailure "$branch was not removed."
-					echo "$(git worktree remove $branch)"
+					GitFailure "$gitRef was not removed."
+					echo "$(git worktree remove $gitRef)"
 					exit 1
 				fi
 			) &
-			loadingAnimation $! "Removing worktree \"$branch\""
+			loadingAnimation $! "Removing worktree \"$gitRef\""
 		)
 	else
 		Error "You can't use gwtr without a parameter in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr"
@@ -1261,13 +1243,17 @@ function gwtr() {
 
 	cd - &>/dev/null
 }
-function gwtd() {
-	local branch
+function gwtrn() {
+	gitRefCheck &>/dev/null
 
-	if [[ $1 != "" ]]; then
-		branch=$1
-	elif [[ $1 == "" ]]; then
-		branch=$(git symbolic-ref --short HEAD)
+
+}
+function gwtd() {
+	local branch=${1:-$(getCurrentWorktreeName)}
+
+	if ! worktreeExists; then
+		GitFailure "Invalid worktree: $branch"
+		return
 	fi
 
 	if [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]]; then
@@ -1275,8 +1261,8 @@ function gwtd() {
 		return
 	fi
 
-	cd $ENV$branch &>/dev/null
-	git checkout . &>/dev/null
+	goToGitDir &>/dev/null
+	git restore . &>/dev/null
 
 	findEnv
 	if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
@@ -1367,8 +1353,8 @@ function start() {
 	pushd $PWD 1>/dev/null
 
 	if ! $INSTALL_ONLY; then
-		findPackageJSON ${2:$(git symbolic-ref --short HEAD)}
-		echo $(findPackageJSON ${2:$(git symbolic-ref --short HEAD)})
+		findPackageJSON ${2:$(getNearestGitDirectory)}
+		echo $(findPackageJSON ${2:$(getNearestGitDirectory)})
 	else
 		findPackageJSON $@
 		echo $(findPackageJSON $@)
@@ -1509,9 +1495,10 @@ function addStyles() {
 	trap - 1 2 3 6
 }
 function repairWorktrees() {
+	gitRefCheck &>/dev/null
 	findEnv
 	if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-		$ENV$branch
+		goToGitDir &>/dev/null
 	else
 		Error "No environment found"
 
@@ -1576,11 +1563,11 @@ function repairWorktrees() {
 	-
 }
 function repairWorktree() {
-	local branch=$(git branch |grep \* | cut -d " " -f2)
+	local branch=$(getCurrentWorktreeName)
 
 	findEnv
 	if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-		$ENV$branch
+		goToGitDir &>/dev/null
 	else
 		Error "No environment found"
 
@@ -1603,9 +1590,9 @@ function repairWorktree() {
 	local repairNeeded=false
 
 	if [[ $2 != '' ]]; then
-		ref=${2:-$(git symbolic-ref --short HEAD)}
+		ref=${2:-$(getNearestGitDirectory)}
 	else
-		ref=${1:-$(git symbolic-ref --short HEAD)}
+		ref=${1:-$(getNearestGitDirectory)}
 		Warning 'No worktree referenced' 
 		read REPLY"?$(Color -m 'What worktree do you want to repair? (enter nothing to skip)' -ub): "
 
@@ -1673,24 +1660,24 @@ function repairWorktree() {
 
 alias add='git add'
 alias back='git reset HEAD~1'
-alias bset='git branch --set-upstream-to=origin/$(git symbolic-ref --short HEAD) $(git symbolic-ref --short HEAD)'
+alias bset='git branch --set-upstream-to=origin/$(getCurrentWorktreeName) $(getCurrentWorktreeName)'
 alias branch='git branch'
 alias branches='git branch --list'
-alias bkto='git reset --hard origin/$(git symbolic-ref --short HEAD)'
+alias bkto='git reset --hard origin/$(getCurrentWorktreeName)'
 alias cam='git add . && git commit -m'
 alias ch='git checkout'
 alias chd='git checkout develop'
 alias chma='git checkout master'
-alias chr='git checkout root'
+alias chr='git switch root'
 alias chs='git checkout sandbox'
-alias chsb='git checkout starter_branch'
+alias chsb='git switch starter_branch'
 alias clone='git clone'
 alias cm='git commit -m'
 alias coressh='git config core.sshCommand "ssh -i ~/.ssh/${1} -F /dev/null"'
 alias counts='git shortlog -sne'
 alias dm='git diff --minimal'
 alias fetch='git fetch'
-alias fuck='git reset --hard origin/$(git symbolic-ref --short HEAD)'
+alias fuck='git reset --hard origin/$(getCurrentWorktreeName)'
 alias grs='git reset'
 alias grsurl='git remote set-url origin'
 alias grv='git remote -v'
@@ -1702,26 +1689,26 @@ alias gwtl='git worktree list'
 alias home='git reset origin/master'
 alias lga='git log --graph --all --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)"'
 alias mg='git merge'
-alias mpeek='git log master.. --graph $(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
+alias mpeek='git log master.. --graph $(getCurrentWorktreeName) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
 alias newb='git checkout -b'
 alias pages='git stash && git checkout gh-pages'
-alias peek='git fetch && git log --graph origin/$(git symbolic-ref --short HEAD) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20} --'
+alias peek='git fetch && git log --graph origin/$(getCurrentWorktreeName) --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20} --'
 alias peekall='git log --graph origin --pretty=format:"%C(red bold)%h%Creset -%C(auto)%d%Creset %s%Creset - %C(green bold)%an %C(green dim)(%cr)" ${1-\-20}'
-alias poke='git push origin $(git symbolic-ref --short HEAD)'
+alias poke='git push origin $(getCurrentWorktreeName)'
 alias pop='git stash pop'
 alias pud='git pull origin develop'
 alias push='git push'
 alias pushall='git push && git push origin --tags'
 alias pull='git pull'
-alias pset='git push --set-upstream origin $(git symbolic-ref --short HEAD)'
+alias pset='git push --set-upstream origin $(getCurrentWorktreeName)'
 alias ptag='git push origin --tags'
 alias rb='git rebase'
 alias rbd='git rebase develop'
 alias rbm='git rebase master'
 alias ref='git reflog'
 alias s='git status'
-alias setit='git reset --hard origin/$(git symbolic-ref --short HEAD)'
-alias shit='git checkout .'
+alias setit='git reset --hard origin/$(getCurrentWorktreeName)'
+alias shit='git restore .'
 alias shove='git push -f'
 alias sta='git add . && git stash'
 alias stash='git add . && git stash'
@@ -1736,7 +1723,7 @@ alias whichup=whichupstream='git branch -vv'
 # SFTP / FileZilla
 #-------------------------------------------------------------
 function chpm() {
-	local branch=$(git branch |grep \* | cut -d " " -f2)
+	local branch=$(getCurrentWorktreeName)
 
 	# Reset Permissions Script
 	Message 'Please enter the folder to update permissions:'
@@ -1746,7 +1733,7 @@ function chpm() {
 	echo "chmod 777 $FOLDER" | fz >/dev/null
 }
 function fz() {
-	local branch=$(git branch |grep \* | cut -d " " -f2)
+	local branch=$(getCurrentWorktreeName)
 
 	if [[ $1 != "" ]]; then
 		echo $@
@@ -1770,9 +1757,9 @@ EOF
 	)
 }
 function getdev() {
-	local branch=$(git branch |grep \* | cut -d " " -f2)
+	local branch=$(getCurrentWorktreeName)
 
-	goToCurrentBranch
+	goToGitDir
 
 	if [ ! -d _dev ] && mkdir _dev
 
@@ -1786,7 +1773,7 @@ echo $FZPWD | pbcopy && sftp -r $FZUSER@sftp.jobvite.com:/uploads/$branch << EOF
 get -r dev
 EOF
 
-	goToCurrentBranch
+	goToGitDir
 	echo
 
 
@@ -1794,7 +1781,7 @@ EOF
 
 }
 alias fzu="echo $FZPWD | pbcopy | sftp $FZUSER@sftp.jobvite.com:/uploads/"
-alias fzr="echo $FZPWD | pbcopy | sftp $FZUSER@sftp.jobvite.com:/uploads/$(git symbolic-ref --short HEAD)"
+alias fzr="echo $FZPWD | pbcopy | sftp $FZUSER@sftp.jobvite.com:/uploads/$(getCurrentWorktreeName)"
 
 #-------------------------------------------------------------
 # NPM
@@ -1807,7 +1794,7 @@ alias ncuif='ncu -u && npm install && npm audit fix'
 # Heroku
 #-------------------------------------------------------------
 alias apps='heroku list'
-alias hbkto='git reset --hard heroku/$(git symbolic-ref --short HEAD)'
+alias hbkto='git reset --hard heroku/$(getCurrentWorktreeName)'
 alias hl='heroku logs --tail'
 alias hp='git push heroku master'
 alias hpt='git push heroku --tags'

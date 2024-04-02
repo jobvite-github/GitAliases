@@ -7,12 +7,18 @@
 JVPATH=~/Employ/Jobvite/ # Set your JVPATH variable to your Jobvite folder's path. MUST END WITH /
 TLPATH=~/Employ/Talemetry/ # Set your TLPATH variable to your Talemetry folder's path. MUST END WITH /
 
+alias jv='cd $JVPATH'
+alias tl='cd $TLPATH'
+
+# editor function call "$EDITOR_CMD ."
+EDITOR_CMD=code
+
 # FZ Stuff
 #-------------------------------------------------------------
-FZPKEY=''       # FileZilla Public Key
-FZHOST=''       # FileZilla Host
-FZUSER=''       # FileZilla Username
-FZPWD=''        # FileZilla Password
+SFTP_PKEY=''       # FileZilla Public Key
+SFTP_HOST=''   # FileZilla Host
+SFTP_USER=''              # FileZilla Username
+SFTP_PWD=''         # FileZilla Password
 
 #== End Config Values
 #
@@ -21,45 +27,12 @@ FZPWD=''        # FileZilla Password
 
 # Load / Edit / Update .profile
 #-------------------------------------------------------------
-alias config='code ~/.profile && Highlight $cWarning " Editing ~/.profile $(tput cnorm)"'
-alias reload='source ~/.profile && Highlight $cSuccess " .profile Reloaded $(tput cnorm)"'
+alias config='$EDITOR_CMD ~/.profile && GitInProgress "Editing ~/.profile. Run the \`reload\` function, or open a new session, when you finish to use your changes"'
+alias reload='source ~/.profile && GitSuccess ".profile Reloaded"'
 
 #============================================================
 #= Global Variables
 #============================================================
-ENV=''
-ENVTYPE=''
-function findEnv() {
-	dir=${1-$PWD}
-	step=${2-0}
-	if [[ $3 != '' ]]; then
-		dir=$1$2
-		step=$3
-	fi
-	result="${dir%"${dir##*[!/]}"}" # extglob-free multi-trailing-/ trim
-	result="${result##*/}"          # remove everything before the last /
-	result=${result:-/}
-	result=`echo "$result" | tr 'A-Z' 'a-z'`
-
-	if [[ $result == 'jobvite' || $result == 'cws' ]]; then
-		ENV=$JVPATH
-		ENVTYPE='jv'
-	elif [[ $result == "talemetry" ]]; then
-		ENV=$TLPATH
-		ENVTYPE='tl'
-	elif [ $step -ge 0 ] && [[ $step > 5 ]]; then
-		ENV=$PWD/
-	else
-		((step++))
-		findEnv $(dirname $dir) $step
-		return
-	fi
-
-	step=0
-}
-function goToCurrentBranch() {
-	cd $(getNearestGitDirectory)
-}
 
 #-------------------------------------------------------------
 # Find Helpers
@@ -226,8 +199,8 @@ function adjustToTerminalWidth() {
 	fi
 }
 function colorText() {
-	local color=${1:=$Yellow}
-	local output="${2:=""}"
+	local color=${1:-$Yellow}
+	local output="${2:-""}"
 
 	output="$(tput setaf $(hexToColor $color))$output"
 	
@@ -272,26 +245,22 @@ function Color() {
 	echo -e $(formatText $NORMAL $BOLD $UNDERLINE "$(colorText ${COLOR:-$Blue} $OUTPUT)")
 }
 function Highlight() {
-	local color=${1:=$Yellow}
-	local output="${2:=""}"
+	local highlightColor=${1:-$Yellow}
+	local output="${2:-""}"
+	local textColor="$3"
 
-	echo -e "$(tput setab $(hexToColor $color))$output$(tput sgr0)"
+	if [[ $3 != "" ]]; then
+		echo -e "$(tput setab $(hexToColor $highlightColor))$(colorText $textColor $output)$(tput sgr0)"
+	else
+		echo -e "$(tput setab $(hexToColor $highlightColor))$output$(tput sgr0)"
+	fi
 }
 function HighlightLine() {
-	local str=
-	local color=
+	local highlightColor=${1:-$Yellow}
+	local output="$(adjustToTerminalWidth "$2")"
+	local textColor="$3"
 
-	if [[ $# -eq 1 ]]; then
-		str="$1"
-	elif [[ $# -eq 2 ]]; then
-		color="$1"
-		str="$2"
-	fi
-
-	str=" ${str:=""} "
-	color=${color:=$Yellow}
-
-	Highlight $color "$(adjustToTerminalWidth "$str")"
+	Highlight $highlightColor "$output" $textColor
 }
 #- Formatting Functions
 function Alert() {
@@ -299,7 +268,7 @@ function Alert() {
 	local color=${2:-$cWarning}
 	local str=${3:-''}
 
-	echo -e $(Color $txt_color "$(HighlightLine "$str" $color)")
+	echo -e $(HighlightLine $color "$(Color $txt_color "$str")")
 }
 
 #============================================================
@@ -323,46 +292,58 @@ function promptYesNo() {
 
 #- Coloring Functions
 function Success() {
-	echo -e $(Color -c $cSuccess -m ${1:='Success'} -b)
+	echo -e $(Color -c $cSuccess -m ${1:-'Success'} -b)
 }
 function GitSuccess() {    
-	local msg=" ${1:="$(git show -s --format='%h - %s')"} "
-	local icon=" $(echo -e ${2:='\U0002714'}) "
+	local msg=" ${1:-"$(git show -s --format='%h - %s')"} "
+	local icon=" $(echo -e ${2:-'\U0002714'}) "
 	local output="$msg"
 	local output_length=$((${#icon} + ${#output}))
 	local terminal_width=$(tput cols)
 	local str=
 
-	str="$(Highlight $DarkGray "$(Color $cSuccess "$icon")")$(Color $Blue "$output")"
+	str="$(Highlight $DarkGray "$(Color $cSuccess "$icon")")$(Color $cSuccess "$output")"
 
-	echo "$(tput sgr0)"
-	echo $str
-	echo
+	DisplayFormattedString
+}
+function GitInProgress() {
+	local msg=" ${1:-'In progress'} "
+	local icon=" $(echo -e ${2:-'\U00021BB'}) "
+	local output="$msg"
+	local output_length=$((${#icon} + ${#output}))
+	local terminal_width=$(tput cols)
+
+	str="$(Highlight $DarkGray "$(Color $cMessage "$icon")")$(Color $Blue "$output")"
+
+	DisplayFormattedString
 }
 function GitFailure() {
-	local msg=" ${1:='Error: Something went wrong'} "
-	local icon=" $(echo -e ${2:='\U0002716'}) "
+	local msg=" ${1:-'Error: Something went wrong'} "
+	local icon=" $(echo -e ${2:-'\U0002716'}) "
 	local output="$msg"
 	local output_length=$((${#icon} + ${#output}))
 	local terminal_width=$(tput cols)
 
 	str="$(Highlight $cError "$icon")$(Color $cWarning "$output")"
 
-	echo "$(tput sgr0)"
-	echo $str
-	echo
+	DisplayFormattedString
 }
 function Warning() {
-	echo -e $(Color $cWarning ${1:='Warning'})
+	echo -e $(Color $cWarning ${1:-'Warning'})
 }
 function Error() {
-	echo -e $(Color $cError ${1:='Error'})
+	echo -e $(Color $cError ${1:-'Error'})
 }
 function Caution() {
-	echo -e $(Color $cCaution ${1:='Caution'})
+	echo -e $(Color $cCaution ${1:-'Caution'})
 }
 function Message() {
-	echo -e $(Color $cMessage ${1:='Message'})
+	echo -e $(Color $cMessage ${1:-'Message'})
+}
+function DisplayFormattedString() {
+	tput sgr0
+	echo ${1:-$str}
+	tput cnorm
 }
 
 # End Text Formatting
@@ -382,8 +363,8 @@ function shutdown() {
 	tput cnorm
 }
 function loadingAnimation() {
-	local pid=${1:=$!} # Process Id of the previous running command
-	local msg=${2:="Please hold"} # Message to display
+	local pid=${1:-$!} # Process Id of the previous running command
+	local msg=${2:-"Please hold"} # Message to display
 	local spinIndex=${3:-$(($RANDOM % 15))}
 	local output=
 	local spin='-\|/' # Default spin characters
@@ -610,6 +591,20 @@ function getCurrentBranchName() {
 	fi
 
 }
+function gitRefCheck() {
+	# Set repo and branch/worktree paths
+	gitPath=$(git rev-parse --absolute-git-dir)
+	gitWorktreePath=$(dirname $gitPath)
+	gitRepo=$(getNearestGitRepo)
+	gitDir=$(getNearestGitDirectory)
+	gitRef=$(getCurrentBranchName)
+
+	echo "gitPath: $gitPath"
+	echo "gitWorktreePath: $gitWorktreePath"
+	echo "gitRepo: $gitRepo"
+	echo "gitDir: $gitDir"
+	echo "gitRef: $gitRef"
+}
 function getCurrentWorktreeName() {
 	local dir=''
 	gitRefCheck &>/dev/null
@@ -621,28 +616,19 @@ function getCurrentWorktreeName() {
 	echo $(basename $dir)
 }
 function goToGitRepo() {
-	gitRepo=$(getNearestGitRepo)
+	gitRefCheck &>/dev/null
 
 	cd $gitRepo &>/dev/null
+	popd -n &>/dev/null
 }
 function goToGitDir() {
+	gitRefCheck &>/dev/null
 	if [[ $(git rev-parse --show-cdup) ]]; then
 		cd $(git rev-parse --show-cdup) &>/dev/null
 	elif [[ $(getNearestGitDirectory) != $(getNearestGitRepo) ]]; then
 		cd $(getNearestGitDirectory) &>/dev/null
 	fi
-}
-function gitRefCheck() {
-	# Set repo and branch/worktree paths
-	gitPath=$(git rev-parse --absolute-git-dir)
-	gitRepo=$(getNearestGitRepo)
-	gitDir=$(getNearestGitDirectory)
-	gitRef=$(getCurrentBranchName)
-
-	echo "gitPath: $gitPath"
-	echo "gitRepo: $gitRepo"
-	echo "gitDir: $gitDir"
-	echo "gitRef: $gitRef"
+	popd -n &>/dev/null
 }
 function checkGitDivergence() {
 	if [ -z "$(git symbolic-ref HEAD 2>/dev/null)" ]; then
@@ -830,9 +816,9 @@ function camp() {
 		validateWorktree
 	fi
 
-	git add . &>/dev/null
 
 	if checkGitDivergence; then
+		git add . &>/dev/null
 		gitPush $@
 	fi
 }
@@ -849,7 +835,7 @@ function gitPush() {
 	#    the end of the fn call. Example:
 	#        gitPush <commit_msg> <branch_name>
 	#-------------------------------------------------------------
-	local branch=$(getCurrentWorktreeName)
+	local branch="$(getCurrentWorktreeName)"
 
 	# Flags
 	m=false		#commit message flag
@@ -878,11 +864,26 @@ function gitPush() {
 			echo "-t, --tag <tag>          includes a tag"
 			echo "-m, --tag-msg <msg>      specifies a tag message"
 			echo "-f, --force              force push changes"
+			echo "-c, --current            show current git refs"
 			echo ""
 			echo "Note:"
 			echo "If no commit message is provided and no tag message is specified when using the -t flag, this will prompt you to include a message with your commit."
 			echo ""
-			echo "Ensure you are in the correct Git directory before running this."
+			if [[ ${@[$i+1]} == '-c' || ${@[$i+1]} == '--current' ]]; then
+				echo "Current Git References"
+				echo "----------------------"
+				gitRefCheck
+				echo "gitPush params"
+				echo "----------------------"
+				echo "branch: $branch"
+				echo "m: $m"
+				echo "t: $t"
+				echo "tm: $tm"
+				echo "f: $f"
+				echo "tag: $tag"
+				echo "tmg: $tmg"
+				echo "msg: $msg"
+			fi
 			return
 		elif [[ ${@[$i]} == '-t' || ${@[$i]} == '--tag' ]]; then # if tagged
 			t=true
@@ -896,7 +897,6 @@ function gitPush() {
 			f=true
 		elif [[ ${@[$i]} != "" ]]; then
 			git show-ref --quiet refs/remotes/origin/${@[$i]}
-
 			if [[ $? == 0 ]]; then # if last parameter is specified branch
 				branch=${@[$i]}
 			else # if it isn't a flag or a branch, it must be a commit message
@@ -1034,7 +1034,7 @@ function gitPull() {
 	#    the end of the fn call. Example:
 	#        gitPull <branch_name>
 	#-------------------------------------------------------------
-	local branch=$(getCurrentWorktreeName)
+	local branch="${1:-$(getCurrentWorktreeName)}"
 
 	(
 		(
@@ -1054,13 +1054,36 @@ function gitPull() {
 function gwtn() {
 	local SKIP_INSTALL=false
 	local NO_OPEN=false
-	local MAKE=false
 	local DETACH=false
 	local existingBranch=false
 	local branch=""
 
+	# Function to check if a flag is present
+	function hasFlag() {
+		for var in "$@"; do
+			if [[ $var == "$1" ]]; then
+				return 0
+			fi
+		done
+		return 1
+	}
+
+	# Process the flags
 	while [[ $# -gt 0 ]]; do
 		case $1 in
+			-s | --skip-install | --skip)
+				SKIP_INSTALL=true
+				;;
+			-no | --noopen)
+				NO_OPEN=true
+				;;
+			-m | --make)
+				SKIP_INSTALL=true
+				NO_OPEN=true
+				;;
+			-d | --detach)
+				DETACH=true
+				;;
 			-h | --help)
 				echo "gwtn (Git Worktree New) - Creates a new JV project worktree"
 				echo " "
@@ -1069,48 +1092,51 @@ function gwtn() {
 				echo "options:"
 				echo "-h, --help                            show brief help"
 				echo "-s, --skip-install=SKIP_INSTALL       specify an action to use"
-				echo "-no, --noopen=NO_OPEN                 specify to open in VSCode"
+				echo "-no, --noopen=NO_OPEN                 specify to open in editor"
 				echo "-m, --make=MAKE                       equivalent to calling gwtn -s -no"
 				echo "--detach=DETACH                       makes worktree, but no push to origin"
+				if hasFlag "-c" "$@"; then
+					echo "Parameters"
+					echo "----------------------"
+					echo "SKIP_INSTALL: $SKIP_INSTALL"
+					echo "NO_OPEN: $NO_OPEN"
+					echo "DETACH: $DETACH"
+					echo "existingBranch: $existingBranch"
+					echo "branch location: $(getNearestGitRepo)/$branch"
+					echo "branch: $branch"
+				fi
 				return
 				;;
-			-s | --skip-install | --skip)
-				SKIP_INSTALL=true
-				shift
-				;;
-			-no | --noopen)
-				NO_OPEN=true
-				shift
-				;;
-			-m | --make)
-				MAKE=true
-				shift
-				;;
-			--detach)
-				DETACH=true
-				shift
+			--log)
+				echo "gwtn parameters"
+				echo "----------------------"
+				echo "SKIP_INSTALL: $SKIP_INSTALL"
+				echo "NO_OPEN: $NO_OPEN"
+				echo "DETACH: $DETACH"
+				echo "existingBranch: $existingBranch"
+				echo "branch location: $(getNearestGitRepo)/$branch"
+				echo "branch name: $branch"
 				;;
 			*)
-				branch=$1
-				shift
+				if [[ -z $branch ]]; then
+					branch=$1
+				fi
 				;;
 		esac
+		shift
 	done
 
 	if [[ $branch != "" ]]; then
-		findEnv
-		if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-			cd $ENV &>/dev/null
-		fi
+		goToGitRepo
 
-		if [ -d $ENV"starter_branch" ]; then
+		if [ -d $(getNearestGitRepo)/"starter_branch" ]; then
 			Error "starter_branch is in your worktrees. Remove the starter_branch worktree and try again."
 			return
 		fi
 
-		if [ -d $ENV$branch ]; then
-			Caution "$ENV$branch is already in your worktrees. Moving there now..."
-			goToGitDir &>/dev/null
+		if [ -d $(getNearestGitRepo)/$branch ]; then
+			Caution "$(getNearestGitRepo)/$branch is already in your worktrees. Moving there now..."
+			cd $(getNearestGitRepo)/$branch &>/dev/null
 			return
 		fi
 
@@ -1157,13 +1183,13 @@ function gwtn() {
 			loadingAnimation $! "Setting up worktree \"$branch\""
 		)
 
-		goToGitDir &>/dev/null
+		cd $(getNearestGitRepo)/$branch &>/dev/null
 
-		if ! $SKIP_INSTALL && ! $MAKE; then
+		if ! $SKIP_INSTALL; then
 			start -i || { GitFailure "Unable to install npm"; return; }
 		fi
 
-		if ! $DETACH && ! $MAKE; then
+		if ! $DETACH; then
 			(
 				(
 					if $existingBranch; then
@@ -1191,62 +1217,148 @@ function gwtn() {
 			)
 		fi
 
-		if ! $NO_OPEN && ! $MAKE; then
+		if ! $NO_OPEN; then
 			(
 				(
-					if code .; then
+					if $EDITOR_CMD .; then
 						exit
 					else
-						GitFailure "Error: Failed to open in VSCode."
-						echo $(code .)
+						GitFailure "Error: Failed to open in your editor."
+						echo $($EDITOR_CMD .)
 						exit 1
 					fi
 				) &
-				loadingAnimation $! "Opening in VSCode"
+				loadingAnimation $! "Opening in your editor"
 			)
+		else
+			popd &>/dev/null
 		fi
 	else
 		Error "Need a worktree name ( e.x. gwtn myworktree )"
 		return
 	fi
+
+	goToGitRepo &>/dev/null
 }
 function gwtr() {
-	gitRefCheck &>/dev/null
-	trap 'echo && echo $(Alert $cWarning "Stopped removing worktree \"$gitRef\"\nCheck on what has been deleted") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
+	local ref=${1:-$(getCurrentWorktreeName)}
+	trap 'echo && echo $(Alert $cWarning "Stopped removing worktree \"$ref\"\nCheck on what has been deleted") && shutdown && trap - 1 2 3 6 && return' 1 2 3 6
 
 	if ! worktreeExists; then
-		GitFailure "Invalid worktree: $gitRef"
+		GitFailure "Invalid worktree: $ref"
 		return
 	fi
 
-	if [[ $gitRef != "root" ]] || [[ $gitRef != "starter_branch" ]]; then
-		cd $gitDir &>/dev/null
+	if [[ $ref != "root" ]]; then
+		goToGitDir &>/dev/null
 		git restore . &>/dev/null
 
 		(
 			(
-				if git worktree remove $gitRef &>/dev/null; then
-					GitSuccess "$gitRef has been removed."
+				if git worktree remove $ref &>/dev/null; then
+					GitSuccess "$ref has been removed."
 					exit
 				else
-					GitFailure "$gitRef was not removed."
-					echo "$(git worktree remove $gitRef)"
+					GitFailure "$ref was not removed."
+					echo "$(git worktree remove $ref)"
 					exit 1
 				fi
 			) &
-			loadingAnimation $! "Removing worktree \"$gitRef\""
+			loadingAnimation $! "Removing worktree \"$ref\""
 		)
 	else
 		Error "You can't use gwtr without a parameter in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr"
 		return
 	fi
 
-	cd - &>/dev/null
+	goToGitRepo &>/dev/null
 }
 function gwtrn() {
-	gitRefCheck &>/dev/null
+	# Set current worktree and target worktree names
+	if [[ $2 != "" ]]; then
+		local current="$1"
+		local target="$2"
+	elif [[ $1 != "" ]]; then
+		local current="$(getCurrentWorktreeName)"
+		local target="$1"
+	fi
 
+	(
+		(
+			# Move branch
+			if git branch -m "$current" "$target"; then
+				GitSuccess "\"$target\" created"
+			else
+				GitFailure "Unable to create $target"
+				echo $(git branch -m "$current" "$target")
+				exit 1
+			fi
+		) &
+		loadingAnimation $! "Moving worktree \"$current\" to \"$target\""
+	)
+	(
+		(
+			# push new branch
+			if git push origin -u "$target"; then
+				GitSuccess "\"$target\" pushed"
+			else
+				GitFailure "Unable to push $target"
+				echo $(git push origin -u "$target")
+				exit 1
+			fi
+		) &
+		loadingAnimation $! "Pushing worktree \"$target\""
+	)
 
+	# Prompt removal of old branch
+	if promptYesNo "$(Message "Do you want to remove the $current branch?")"; then
+		if git push origin --delete "$current"; then
+			GitSuccess "\"$current\" deleted"
+			exit
+		else
+			GitFailure "Unable to delete $current"
+			exit 1
+		fi
+	fi
+
+	if ! goToGitRepo; then
+		GitFailure "Unable to go to repo"
+		
+	fi
+
+	(
+		(
+			# Rename folder and move to it
+			if git worktree move $current $target; then
+				GitSuccess "Moved worktree \"$current\" to \"$target\""
+			else
+				GitFailure "Unable to move worktree \"$current\" to \"$target\""
+				echo $(git worktree move $current $target)
+				exit 1
+			fi
+		) &
+		loadingAnimation $! "Renaming worktree \"$current\" to \"$target\""
+	)
+
+	goToGitRepo &>/dev/null
+
+	if ! cd $target; then
+		GitFailure "Unable to change to directory: $target"
+	fi
+
+	(
+		(
+			# Remove worktree reference
+			if rm -rf $gitPath; then
+				GitSuccess "Removed reference: $gitPath"
+			else
+				GitSuccess "Unable to remove reference: $gitPath"
+				echo $(rm -rf $gitPath)
+				exit 1
+			fi
+		) &
+		loadingAnimation $! "Removing worktree reference for $current"
+	)
 }
 function gwtd() {
 	local branch=${1:-$(getCurrentWorktreeName)}
@@ -1256,18 +1368,14 @@ function gwtd() {
 		return
 	fi
 
-	if [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]]; then
+	if [[ $branch == "" ]] && [[ $branch == "root" ]] || [[ $branch == "starter_branch" ]]; then
 		Message "You can't use gwtr without a parameter in root or starter_branch. Either specify a branch, or cd into that branch and run gwtr"
 		return
 	fi
 
 	goToGitDir &>/dev/null
 	git restore . &>/dev/null
-
-	findEnv
-	if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-		cd $ENV/ &>/dev/null
-	fi
+	goToGitRepo &>/dev/null
 
 	(
 		(
@@ -1298,7 +1406,7 @@ function gwtd() {
 		loadingAnimation $! "Deleting branch \"$branch\""
 	)
 
-	cd - &>/dev/null
+	goToGitRepo &>/dev/null
 }
 function tagging() {
 	if [[ $1 == "" ]]; then
@@ -1315,14 +1423,15 @@ function tagging() {
 	fi
 }
 function findPackageJSON() {
-	# Find directory containing package.json
-	if [ -f package.json ]
-	then
-		dir=$(dirname 'package.json')
-		return
-	fi
+	local dir=''
 
-	for (( i=1; i <= 3; i++ ))
+    # Find directory containing package.json
+    if [ -f package.json ]; then
+        dir=$(dirname 'package.json')
+        return
+    fi
+
+    for (( i=1; i <= 3; i++ ))
 	do
 		for SDIR in `fn ${1=.} 'package.json' $i`
 		do
@@ -1330,6 +1439,8 @@ function findPackageJSON() {
 		done
 		[[ $dir != '' ]] && break
 	done
+
+	echo $dir
 }
 function start() {
 	# Usage: Start  [ stylesFolderName <default:styles> <optional> ] [ -i Install Only <optional> ]
@@ -1349,28 +1460,28 @@ function start() {
 		shift
 	done
 
-	# starting directory for redirect when finished
-	pushd $PWD 1>/dev/null
+	local searchDir=${dir:-$(getNearestGitDirectory)}
 
 	if ! $INSTALL_ONLY; then
-		findPackageJSON ${2:$(getNearestGitDirectory)}
-		echo $(findPackageJSON ${2:$(getNearestGitDirectory)})
+		dir=$(findPackageJSON $searchDir)
 	else
-		findPackageJSON $@
-		echo $(findPackageJSON $@)
+		dir=$(findPackageJSON $@)
 	fi
+
+	# Catch for exiting on ctrl+c for exit message and returning from packaged dir
+	trap 'echo && GitFailure "Build canceled" && goToGitDir &>/dev/null && return' 1 2 3 6
 
 	# if [[ $dir != '' ]]
 	if [ -d $dir ]; then
-		# Catch for exiting on ctrl+c for exit message and returning from packaged dir
-		trap 'echo && echo $(colorText $cMessage "...Kickoff Stopped") && shutdown && popd 1>/dev/null && trap - 1 2 3 6 && return' 1 2 3 6
-
 		# cd to dir containing package.json
 		cd $dir &>/dev/null
 
 		if ! $SKIP_INSTALL; then
 			(
 				(
+					# Catch for exiting on ctrl+c for exit message and returning from packaged dir
+					trap 'exit 1' 1 2 3 6
+					
 					if npm install &>/dev/null; then
 						GitSuccess "Kickoff installed"
 						exit
@@ -1401,7 +1512,7 @@ function start() {
 		echo '  $: start path/to/'
 	fi
 
-	- &>/dev/null
+	goToGitDir &>/dev/null
 }
 
 
@@ -1447,7 +1558,7 @@ function addStyles() {
 		fi
 	fi
 
-	trap 'echo && echo $(Alert $cWarning "Stopped Adding Kickoff") && shutdown && popd 1>/dev/null && trap - 1 2 3 6 && return' 1 2 3 6
+	trap 'echo && GitFailure "Stopped adding styles" && goToGitDir &>/dev/null && return' 1 2 3 6
 
 	(
 		(
@@ -1473,13 +1584,13 @@ function addStyles() {
 		loadingAnimation $! "Adding Kickoff"
 	)
 
-	popd 1>/dev/null
-
 	#find new Kickoff folder
-	dir=''
-	findPackageJSON $@
+	dir=$(findPackageJSON $@)
 	(
 		(
+			# Catch for exiting on ctrl+c for exit message
+			trap 'exit 1' 1 2 3 6
+
 			if npm install &>/dev/null; then
 				GitSuccess "Kickoff added to $dir"
 				exit
@@ -1491,31 +1602,11 @@ function addStyles() {
 		) &
 		loadingAnimation $! "Installing Kickoff"
 	)
-
-	trap - 1 2 3 6
 }
 function repairWorktrees() {
 	gitRefCheck &>/dev/null
-	findEnv
-	if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-		goToGitDir &>/dev/null
-	else
-		Error "No environment found"
 
-		read "Do you want to continue? (y/n) " REPLY
-
-		case $REPLY in
-			[yY][eE][sS]|[yY])
-				echo
-				continue
-			;;
-			[nN][oO]|[nN]|''|*)
-				echo
-				Message "Bye"
-				return
-			;;
-		esac
-	fi
+	goToGitRepo &>/dev/null
 
 	local repairNeeded=false
 
@@ -1525,14 +1616,14 @@ function repairWorktrees() {
 			while read entry
 			do
 				eval "$entry"
-				if [ -d $ENV$ref ]; then
-					if [ ! -d $ENV.git/worktrees/$ref ]; then
+				if [ -d $PWD$ref ]; then
+					if [ ! -d $PWD.git/worktrees/$ref ]; then
 						repairNeeded=true
 
 						# Create worktree ref
-						mkdir $ENV.git/worktrees/$ref
+						mkdir $PWD.git/worktrees/$ref
 						-
-						$ENV.git/worktrees/$ref
+						$PWD.git/worktrees/$ref
 
 						if [ ! -f COMMIT_EDITMSG ]; then
 							# Create COMMIT_EDITMSG
@@ -1543,13 +1634,13 @@ function repairWorktrees() {
 							touch FETCH_HEAD
 						fi
 						echo '../..' > commondir
-						echo "$ENV$ref/.git" > gitdir
+						echo "$PWD$ref/.git" > gitdir
 						echo "ref: refs/heads/$ref" > HEAD
 						echo $(git log -n 1 --pretty=format:"%H") > ORIG_HEAD
 
 						-
-						$ENV$ref
-						echo "gitdir: $ENV.git/worktrees/$ref" > .git
+						$PWD$ref
+						echo "gitdir: $PWD.git/worktrees/$ref" > .git
 						git reset --quiet
 					fi
 				fi
@@ -1560,31 +1651,12 @@ function repairWorktrees() {
 
 	Alert $cSuccess "Worktrees repaired."
 
-	-
+	goToGitRepo &>/dev/null
 }
 function repairWorktree() {
 	local branch=$(getCurrentWorktreeName)
 
-	findEnv
-	if [[ $ENVTYPE == "jv" ]] || [[ $ENVTYPE == "tl" ]]; then
-		goToGitDir &>/dev/null
-	else
-		Error "No environment found"
-
-		read "Do you want to continue? (y/n) " REPLY
-
-		case $REPLY in
-			[yY][eE][sS]|[yY])
-				echo
-				continue
-			;;
-			[nN][oO]|[nN]|''|*)
-				echo
-				Message "Bye"
-				return
-			;;
-		esac
-	fi
+	goToGitDir &>/dev/null
 
 	local ref=''
 	local repairNeeded=false
@@ -1598,27 +1670,28 @@ function repairWorktree() {
 
 		case $REPLY in
 			*)
+				goToGitRepo &>/dev/null
 				echo
 
-				if [ -d $ENV$ref ]; then
+				if [ -d $PWD$ref ]; then
 					(
 						(
-							if [ ! -d $ENV.git/worktrees/$ref ]; then
+							if [ ! -d $PWD.git/worktrees/$ref ]; then
 								repairNeeded=true
 
 								# Create worktree ref
-								mkdir $ENV.git/worktrees/$ref
+								mkdir $PWD.git/worktrees/$ref
 							fi
 
 							#============================================================
 							#= Debug
 							#============================================================
-							# echo 'ENV ~> '$ENV
+							# echo 'PWD ~> '$PWD
 							# echo 'ref ~> '$ref
 							# echo 'repairNeeded ~> '$repairNeeded
 							#============================================================
 
-							$ENV.git/worktrees/$ref
+							$PWD.git/worktrees/$ref
 
 							if [ ! -f COMMIT_EDITMSG ]; then
 								# Create COMMIT_EDITMSG
@@ -1629,19 +1702,19 @@ function repairWorktree() {
 								touch FETCH_HEAD
 							fi
 							echo '../..' > commondir
-							echo "$ENV$ref/.git" > gitdir
+							echo "$PWD$ref/.git" > gitdir
 							echo "ref: refs/heads/$ref" > HEAD
 							echo $(git log -n 1 --pretty=format:"%H") > ORIG_HEAD
 
 							-
-							$ENV$ref
-							echo "gitdir: $ENV.git/worktrees/$ref" > .git
+							$PWD$ref
+							echo "gitdir: $PWD.git/worktrees/$ref" > .git
 							git reset --quiet
 						) &
 						loadingAnimation $! "Repairing worktrees"
 					)
 				else
-					Alert "Sorry, $whoami. I can't find the worktree $ENV$ref."
+					Alert "Sorry, $whoami. I can't find the worktree $PWD$ref."
 					return 1
 				fi
 
@@ -1655,7 +1728,7 @@ function repairWorktree() {
 
 	fi
 
-	-
+	goToGitRepo &>/dev/null
 }
 
 alias add='git add'
@@ -1723,7 +1796,7 @@ alias whichup=whichupstream='git branch -vv'
 # SFTP / FileZilla
 #-------------------------------------------------------------
 function chpm() {
-	local branch=$(getCurrentWorktreeName)
+	local branch=${1:-$(getCurrentWorktreeName)}
 
 	# Reset Permissions Script
 	Message 'Please enter the folder to update permissions:'
@@ -1733,13 +1806,13 @@ function chpm() {
 	echo "chmod 777 $FOLDER" | fz >/dev/null
 }
 function fz() {
-	local branch=$(getCurrentWorktreeName)
+	local branch=${1:-$(getCurrentWorktreeName)}
 
 	if [[ $1 != "" ]]; then
 		echo $@
-		echo $FZPWD | pbcopy && sftp $FZUSER@$FZHOST:/uploads/$1
+		echo $SFTP_PWD | pbcopy && sftp $SFTP_USER@$SFTP_HOST:/uploads/$1
 	else
-		echo $FZPWD | pbcopy && sftp $FZUSER@$FZHOST:/uploads/$branch
+		echo $SFTP_PWD | pbcopy && sftp $SFTP_USER@$SFTP_HOST:/uploads/$branch
 	fi
 }
 function fzImages() {
@@ -1757,7 +1830,7 @@ EOF
 	)
 }
 function getdev() {
-	local branch=$(getCurrentWorktreeName)
+	local branch=${1:-$(getCurrentWorktreeName)}
 
 	goToGitDir
 
@@ -1766,10 +1839,10 @@ function getdev() {
 	cd _dev/
 
 	Message "Connecting to FileZilla and downloading the dev folder for $branch"
-	echo "When prompted for your password, you can type in your password OR, if you have your \$FZUSER and \$FZPWD set in your aliases global variables, just paste as I've just copied that for you." 
+	echo "When prompted for your password, you can type in your password OR, if you have your \$SFTP_USER and \$SFTP_PWD set in your aliases global variables, just paste as I've just copied that for you." 
 	echo
 
-echo $FZPWD | pbcopy && sftp -r $FZUSER@sftp.jobvite.com:/uploads/$branch << EOF
+echo $SFTP_PWD | pbcopy && sftp -r $SFTP_USER@sftp.jobvite.com:/uploads/$branch << EOF
 get -r dev
 EOF
 
@@ -1780,8 +1853,8 @@ EOF
 	if [ -d _dev/dev ] && Success " √ Downloaded /uploads/$branch/dev to $branch/_dev/dev"
 
 }
-alias fzu="echo $FZPWD | pbcopy | sftp $FZUSER@sftp.jobvite.com:/uploads/"
-alias fzr="echo $FZPWD | pbcopy | sftp $FZUSER@sftp.jobvite.com:/uploads/$(getCurrentWorktreeName)"
+alias fzu="echo $SFTP_PWD | pbcopy | sftp $SFTP_USER@sftp.jobvite.com:/uploads/"
+alias fzr="echo $SFTP_PWD | pbcopy | sftp $SFTP_USER@sftp.jobvite.com:/uploads/$(getCurrentWorktreeName)"
 
 #-------------------------------------------------------------
 # NPM

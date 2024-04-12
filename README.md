@@ -14,6 +14,11 @@ A bunch of helpful aliases for a fast, efficient workflow. Most of the important
 
 # Installing
 ### 1) Loading the aliases
+You will first need to make sure you have a `~/.profile` file. To ensure you do, run the command:
+```sh
+touch ~/.profile
+```
+
 In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, open it by running `open ~/.zshrc` or `open ~/.zshrc`.
 
 >__Note:__

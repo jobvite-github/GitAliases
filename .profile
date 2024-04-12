@@ -1471,8 +1471,7 @@ function start() {
 	# Catch for exiting on ctrl+c for exit message and returning from packaged dir
 	trap 'echo && GitFailure "Build canceled" && goToGitDir &>/dev/null && return' 1 2 3 6
 
-	# if [[ $dir != '' ]]
-	if [ -d $dir ]; then
+	if [[ $dir != '' ]]; then
 		# cd to dir containing package.json
 		cd $dir &>/dev/null
 

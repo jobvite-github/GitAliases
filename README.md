@@ -19,7 +19,7 @@ You will first need to make sure you have a `~/.profile` file. To ensure you do,
 touch ~/.profile
 ```
 
-In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, open it by running `open ~/.zshrc` or `open ~/.zshrc`.
+In your `.zshrc`, or `.bashrc` depending on which you see in your User directory or are currently using, open it by running `open ~/.zshrc` or `open ~/.bashrc`.
 
 >__Note:__
 If you don't know which one you are using, run `echo $0`. This should display "`-zsh`" or "`-bash`". Use whichever one displays or install and choose your own. You can follow [these steps](https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH) to install zsh.

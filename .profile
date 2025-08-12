@@ -46,7 +46,7 @@ function checkForGitAliasesUpdate() {
                 remote_version_line_number=$(curl -s "$GA_REMOTE_PROFILE" | grep -n "GA_VERSION_LOCAL='" | head -n 1 | cut -d: -f1)
                 local_version_line_number=$(grep -n "GA_VERSION_LOCAL='" "$HOME/.profile" | head -n 1 | cut -d: -f1)
 
-                remote_content=$(printf '%s\n' "$(awk '/^###!!!.*(###|!!!)$/{exit}1' "$HOME/.profile")" "$(curl -s "$GA_REMOTE_PROFILE" | awk '/^###!!!.*(###|!!!)$/{found=1} found')")
+                remote_content=$(printf '\n%s' "$(awk '/^###!!!.*(###|!!!)$/{exit}1' "$HOME/.profile")" "$(curl -s "$GA_REMOTE_PROFILE" | awk '/^###!!!.*(###|!!!)$/{found=1} found')")
 
                 # Combine the parts and overwrite the local profile
                 {

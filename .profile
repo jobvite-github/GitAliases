@@ -30,13 +30,14 @@ function whichGitAliasesVersion() {
     printf '%s\n|-------------------|\n' "GitAliases Versions" "LOCAL: $GA_VERSION" "REMOTE: $(remoteGitAliasesVersion)"
 }
 function remoteGitAliasesVersion() {
-    local GA_REMOTE_PROFILE='https://raw.githubusercontent.com/jobvite-github/GitAliases/main/.profile'
+    local GA_REMOTE_PROFILE=$1
     local GA_VERSION_REMOTE=$(curl -s "$GA_REMOTE_PROFILE" | grep -Eo "GA_VERSION='v[0-9]+\.?[0-9]+\.[0-9]+'" | sed -E "s/GA_VERSION='(v[0-9]+\.[0-9]+\.[0-9]+)'/\1/")
     echo $GA_VERSION_REMOTE
 }
 function checkForGitAliasesUpdate() {
+    local GA_REMOTE_PROFILE='https://raw.githubusercontent.com/jobvite-github/GitAliases/main/.profile'
     local GA_VERSION_LOCAL=$GA_VERSION
-    local GA_VERSION_REMOTE=$(remoteGitAliasesVersion)
+    local GA_VERSION_REMOTE=$(remoteGitAliasesVersion $GA_REMOTE_PROFILE)
 
     if [ -n "$GA_VERSION_REMOTE" ] && [ -n "$GA_VERSION_LOCAL" ]; then
         if [[ "$(printf '%s\n' "$GA_VERSION_LOCAL" "$GA_VERSION_REMOTE" | sort -V | head -n 1)" == "$GA_VERSION_LOCAL" && "$GA_VERSION_REMOTE" != "$GA_VERSION_LOCAL" ]]; then
@@ -45,11 +46,7 @@ function checkForGitAliasesUpdate() {
                 remote_version_line_number=$(curl -s "$GA_REMOTE_PROFILE" | grep -n "GA_VERSION_LOCAL='" | head -n 1 | cut -d: -f1)
                 local_version_line_number=$(grep -n "GA_VERSION_LOCAL='" "$HOME/.profile" | head -n 1 | cut -d: -f1)
 
-                remote_content=$(
-                    echo "$(awk '/^###!!!.*(###|!!!)$/{exit}1' "$HOME/.profile")"
-                    echo
-                    echo "$(curl -s "$GA_REMOTE_PROFILE" | awk '/^###!!!.*(###|!!!)$/{found=1} found')"
-                )
+                remote_content=$(printf '%s\n' "$(awk '/^###!!!.*(###|!!!)$/{exit}1' "$HOME/.profile")" "$(curl -s "$GA_REMOTE_PROFILE" | awk '/^###!!!.*(###|!!!)$/{found=1} found')")
 
                 # Combine the parts and overwrite the local profile
                 {
@@ -1982,13 +1979,3 @@ alias zipit='zip -er $1.zip $2'
 
 # End Aliases / Functions
 #============================================================
-
-#-------------------------------------------------------------
-#
-#  Other aliases and functions
-#
-#  Arguably, some functions defined here are quite big.
-#  If you want to make this file smaller, these functions can
-#+ be converted into scripts and removed from here.
-#
-#-------------------------------------------------------------
